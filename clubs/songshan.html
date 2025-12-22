@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>莞松湖双创社区人工智能俱乐部 - AI Club 分部</title>
+    <title>莞-松湖俱乐部 - AI Club 分部</title>
     <style>
         /* --- 1. 全局基础样式 --- */
         :root {
@@ -300,7 +300,7 @@
     <nav class="navbar">
         <div class="logo-container">
             <img src="../logo.png" alt="Logo" class="logo-img">
-            <span class="logo-text">AI Club | 松山湖</span>
+            <span class="logo-text">AI Club | 莞-松湖俱乐部</span>
         </div>
 
         <div class="nav-menu">
@@ -311,7 +311,7 @@
             </div>
             <div class="nav-actions">
                 <a href="../login.html" class="btn btn-login">会员登录</a>
-                <a href="../join.html" class="btn btn-join">加入松山湖</a>
+                <a href="../join.html" class="btn btn-join">加入俱乐部</a>
             </div>
         </div>
 
@@ -320,4 +320,88 @@
             <span class="bar"></span>
             <span class="bar"></span>
         </div>
-    </
+    </nav>
+
+    <section class="hero">
+        <h1>莞-松湖俱乐部</h1>
+        <p>
+            坐落于科技创新的前沿阵地——松山湖高新区。这里汇聚人工智能、机器人、编程教育等多元前沿课程。我们致力于让孩子们在真实场景中动手实践，感受未来科技力量。高水平教练团队+企业资源赋能+丰富项目活动，助力每一位孩子自信成长，打开AI世界的大门！
+        </p>
+        <a href="#features" class="hero-btn">探索我们的课程</a>
+    </section>
+
+    <section id="features" class="features">
+        <h2 class="section-title">核心课程体系</h2>
+        <div class="cards-grid">
+            <div class="card">
+                <span class="card-icon">💻</span>
+                <h3>编程闯关</h3>
+                <p>从图形化积木到 Python 代码，用闯关游戏的方式打开逻辑思维大门。</p>
+                <span class="tag">逻辑思维 | 算法启蒙</span>
+            </div>
+            <div class="card">
+                <span class="card-icon">⚔️</span>
+                <h3>格斗机器人</h3>
+                <p>亲手设计、组装、上阵！体验机械工程与竞技策略的终极碰撞。</p>
+                <span class="tag">工程结构 | 动手能力</span>
+            </div>
+            <div class="card">
+                <span class="card-icon">🚁</span>
+                <h3>无人机竞技</h3>
+                <p>冲上云霄的视角。学习空气动力学与飞行控制，挑战穿越障碍的极限速度。</p>
+                <span class="tag">空间感知 | 手眼协调</span>
+            </div>
+            <div class="card">
+                <span class="card-icon">🧱</span>
+                <h3>积木机器人</h3>
+                <p>万丈高楼平地起。适合低龄段的机械启蒙，让创意在积木中动起来。</p>
+                <span class="tag">创意构建 | 物理基础</span>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="why-us">
+        <h2 class="section-title">特色优势</h2>
+        <div class="benefits-grid">
+            <div class="benefit-item">
+                <h3>🏙️ 科技园区氛围</h3>
+                <p>身处松山湖高新区，近距离接触顶尖科技企业，拥有独特的研学资源。</p>
+            </div>
+            <div class="benefit-item">
+                <h3>👨‍🏫 专业教练团队</h3>
+                <p>拥有丰富竞赛指导经验的专职教练，提供更专业的个性化指导。</p>
+            </div>
+            <div class="benefit-item">
+                <h3>🏆 竞赛主要基地</h3>
+                <p>作为主要集训基地，提供更完善的备赛环境和硬件支持。</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <h2>来松山湖，点亮科技梦想！</h2>
+        <p style="margin-bottom: 2rem; color: #ccc;">预约免费体验课，开启孩子的 AI 之旅。</p>
+        <a href="../join.html" class="footer-btn">预约体验</a>
+        <p style="margin-top: 3rem; font-size: 0.8rem; color: #888;">&copy; 2025 AI Club 莞-松湖俱乐部. All rights reserved.</p>
+    </footer>
+
+    <script>
+        function toggleMenu() {
+            const hamburger = document.querySelector(".hamburger");
+            const navMenu = document.querySelector(".nav-menu");
+            
+            hamburger.classList.toggle("active");
+            navMenu.classList.toggle("active");
+        }
+
+        function closeMenu() {
+            const hamburger = document.querySelector(".hamburger");
+            const navMenu = document.querySelector(".nav-menu");
+            
+            hamburger.classList.remove("active");
+            navMenu.classList.remove("active");
+        }
+    </script>
+
+</body>
+</html>
