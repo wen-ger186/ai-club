@@ -22,6 +22,10 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
+        html {
+            scroll-behavior: smooth; /* 让页面滚动更平滑 */
+        }
+
         body {
             line-height: 1.6;
             color: var(--text-main);
@@ -155,6 +159,39 @@
             border-radius: 50px;
         }
 
+        /* --- [新增] 分店导航区样式 --- */
+        .club-network {
+            text-align: center;
+            padding: 3rem 5%;
+            background-color: #f8fafc; /* 浅蓝灰色背景 */
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .club-network h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark-bg);
+        }
+
+        .club-btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .club-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(37, 99, 235, 0.3);
+        }
+
+
         /* --- 4. 核心项目 --- */
         .features {
             padding: 5rem 10%;
@@ -278,6 +315,8 @@
 
             /* 3. 字体和间距调整 */
             .hero h1 { font-size: 2rem; }
+            /* 手机上分店区域的内边距小一点 */
+            .club-network { padding: 2rem 5%; }
             .features, .why-us { padding: 3rem 5%; } /* 减小内边距 */
             
             /* 汉堡按钮变成 X 的动画效果 */
@@ -318,6 +357,14 @@
         <h1>给孩子的未来装上 AI 翅膀</h1>
         <p>编程 / 机器人 / 无人机 / 竞赛 —— 专注成长，只为点燃科技梦想。</p>
         <a href="join.html" class="hero-btn">加入俱乐部</a>
+    </section>
+
+    <section class="club-network">
+        <h2>探索我们的俱乐部网络</h2>
+        <p style="margin-bottom: 1.5rem; color: var(--text-sub);">我们正在全国各地建立分部，让优质的 AI 教育触手可及。</p>
+        <a href="clubs/songshan.html" class="club-btn">
+            🚀 进入【莞松湖分部】主页
+        </a>
     </section>
 
     <section id="features" class="features">
