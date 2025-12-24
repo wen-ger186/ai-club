@@ -1,330 +1,180 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <title>青少年科技俱乐部 | 未来极客招募</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    /* --- 核心布局与背景 (保持高雅灰风格) --- */
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      background-color: #ffffff;
-      /* 科技纹理 */
-      background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%2399aab5' stroke-width='1.2' opacity='0.5'%3E%3Cpath d='M30 30l15 20m0-20l-15 20M80 80h20v20h-20z'/%3E%3Ctext x='20' y='160' font-family='serif' font-size='18' fill='%2399aab5' stroke='none'&%23x2211;%3C/text%3E%3Ctext x='160' y='40' font-family='serif' font-size='18' fill='%2399aab5' stroke='none'&%23x03C0;%3C/text%3E%3Ccircle cx='140' cy='140' r='4' fill='%2399aab5' stroke='none'/%3E%3Cpath d='M140 140 L160 120 L180 100' stroke-dasharray='4,4'/%3E%3Cpath d='M40 100 L60 120 L100 120' stroke-dasharray='4,4'/%3E%3Ctext x='120' y='180' font-family='monospace' font-size='12' fill='%2399aab5' stroke='none'0101%3C/text%3E%3C/g%3E%3C/svg%3E");
-      background-size: 180px 180px;
-      font-family: "PingFang SC", "Lantinghei SC", "Microsoft YaHei", sans-serif;
-      padding: 20px;
-      overflow-x: hidden;
-      color: #1a202c; 
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI CLUB 报名表</title>
+    <style>
+        /* 页面整体样式 */
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
 
-    .title-box {
-      text-align: center;
-      margin-bottom: 2.5rem;
-    }
-    .title {
-      color: #1a202c;
-      font-size: 2.5rem;
-      font-weight: 700; 
-      letter-spacing: 3px; 
-    }
-    .subtitle {
-      color: #718096; 
-      font-size: 0.95rem;
-      margin-top: 10px;
-      letter-spacing: 3px;
-      font-weight: 400;
-      text-transform: uppercase;
-    }
+        /* 报名卡片样式 */
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+        }
 
-    .form-container {
-      width: 100%;
-      max-width: 400px;
-      background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(25px);
-      -webkit-backdrop-filter: blur(25px);
-      border: 1px solid rgba(255, 255, 255, 0.8);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-      padding: 35px 28px;
-      border-radius: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 1.2rem;
-      transition: transform 0.3s;
-    }
-    .form-container:hover { transform: translateY(-3px); }
+        h1 {
+            text-align: center;
+            color: #1a202c;
+            margin-bottom: 30px;
+        }
 
-    .input-wrapper { position: relative; }
-    
-    .input, .select {
-      width: 100%;
-      padding: 1rem 0;
-      padding-left: 16px;
-      font-size: 1rem;
-      border-radius: 10px;
-      border: 1px solid #cbd5e0;
-      outline: none;
-      box-sizing: border-box;
-      background: #ffffff;
-      color: #1a202c;
-      font-weight: 400;
-      letter-spacing: 1px;
-      transition: all 0.3s ease;
-    }
-    .input:focus, .select:focus {
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
-    }
+        /* 表单控件样式 */
+        .form-group {
+            margin-bottom: 20px;
+        }
 
-    .file-upload-label {
-      display: block;
-      margin-bottom: 5px;
-      font-size: 0.9rem;
-      color: #718096;
-      font-weight: 500;
-    }
-    .file-input {
-      padding: 0.8rem;
-      font-size: 0.9rem;
-    }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #4a5568;
+        }
 
-    .select {
-      appearance: none;
-      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-      background-repeat: no-repeat;
-      background-position: right 1rem center;
-      background-size: 1em;
-      cursor: pointer;
-    }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
 
-    .button {
-      width: 100%;
-      padding: 1rem;
-      font-size: 1.05rem;
-      margin-top: 15px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #fff;
-      border: none;
-      border-radius: 50px;
-      cursor: pointer;
-      font-weight: 600;
-      letter-spacing: 2px;
-      box-shadow: 0 4px 15px rgba(118, 75, 162, 0.25);
-      transition: all 0.3s ease;
-    }
-    .button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 25px rgba(118, 75, 162, 0.35);
-      filter: brightness(1.05);
-    }
-    .button:disabled {
-      background: #cbd5e0;
-      cursor: not-allowed;
-      box-shadow: none;
-    }
+        input:focus, select:focus {
+            border-color: #3182ce;
+            outline: none;
+        }
 
-    .footer-text {
-      margin-top: 2.5rem;
-      color: #718096;
-      font-size: 0.8rem;
-      text-align: center;
-    }
-    /* --- 新增：右上角登录按钮样式 --- */
-    .top-nav {
-      position: absolute;
-      top: 25px;
-      right: 25px;
-      z-index: 1000; /* 保证它在最上层 */
-    }
-    
-    .login-btn {
-      text-decoration: none;
-      color: #1e3c72; /* 和你的主色调一致 */
-      font-weight: 600;
-      font-size: 0.95rem;
-      padding: 10px 20px;
-      background: rgba(255, 255, 255, 0.9);
-      border: 1px solid #1e3c72;
-      border-radius: 50px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+        /* 提交按钮样式 */
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
 
-    .login-btn:hover {
-      background: #1e3c72;
-      color: #ffffff;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 15px rgba(30, 60, 114, 0.2);
-    }
-    
-    /* 手机端适配：屏幕太窄时稍微缩小一点 */
-    @media (max-width: 480px) {
-      .top-nav { top: 15px; right: 15px; }
-      .login-btn { padding: 8px 15px; font-size: 0.85rem; }
-    }
-  </style>
-  
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        .submit-btn:hover {
+            background-color: #1d4ed8;
+        }
+
+        .submit-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* 必填项星号 */
+        .required {
+            color: #e53e3e;
+            margin-left: 4px;
+        }
+
+        /* 分割线 */
+        .section-title {
+            color: #2d3748;
+            border-left: 4px solid #2563eb;
+            padding-left: 10px;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+    </style>
 </head>
 <body>
-  <div class="top-nav">
-    <a href="login.html" class="login-btn">
-      <span>👑</span> 会员登录
-    </a>
-  </div>
-  <div class="title-box">
-    <div class="title">青少年科技俱乐部</div>
-    <div class="subtitle">Future Geek Recruitment</div>
-  </div>
-  
-  <form class="form-container" id="registerForm" autocomplete="off">
-    <div class="input-wrapper">
-      <input class="input" type="text" id="childName" placeholder="孩子姓名" required />
+
+    <div class="container">
+        <h1>🚀 AI CLUB 报名表</h1>
+        
+        <form id="joinForm">
+            
+            <div class="form-group">
+                <label>选择所属俱乐部 <span class="required">*</span></label>
+                <select name="clubLocation" required>
+                    <option value="">-- 请选择 --</option>
+                    <option value="莞-松湖俱乐部">莞-松湖俱乐部</option>
+                    <option value="莞-南城俱乐部">莞-南城俱乐部</option>
+                    <option value="深-南山俱乐部">深-南山俱乐部</option>
+                </select>
+            </div>
+
+            <h3 class="section-title">👶 孩子信息</h3>
+
+            <div class="form-group">
+                <label>孩子姓名 <span class="required">*</span></label>
+                <input type="text" name="childName" placeholder="请输入孩子真实姓名" required>
+            </div>
+
+            <div class="form-group">
+                <label>孩子身份证号码 <span class="required">*</span></label>
+                <input type="text" name="childIDCard" placeholder="用于购买保险 (系统已加密)" required>
+            </div>
+
+            <div class="form-group">
+                <label>性别 <span class="required">*</span></label>
+                <select name="gender" required>
+                    <option value="">-- 请选择 --</option>
+                    <option value="男">男</option>
+                    <option value="女">女</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>就读学校 (日常上课学校) <span class="required">*</span></label>
+                <input type="text" name="school" placeholder="例如：松山湖中心小学" required>
+            </div>
+
+            <div class="form-group">
+                <label>就读班级 <span class="required">*</span></label>
+                <input type="text" name="gradeClass" placeholder="例如：三年级2班" required>
+            </div>
+
+            <h3 class="section-title">📷 照片上传 (新功能)</h3>
+            
+            <div class="form-group">
+                <div style="border: 2px dashed #cbd5e0; padding: 20px; text-align: center; border-radius: 8px; background-color: #f8fafc;">
+                    <label style="margin-bottom: 15px;">请上传孩子生活照或证件照</label>
+                    <input type="file" id="childPhoto" name="childPhoto" accept="image/*" style="display: block; margin: 0 auto; width: auto; border: none;">
+                    <p style="font-size: 0.8rem; color: #718096; margin-top: 10px;">支持 jpg, png 格式</p>
+                </div>
+            </div>
+
+            <h3 class="section-title">👨‍👩‍👧 家长联系方式</h3>
+
+            <div class="form-group">
+                <label>家长手机号 <span class="required">*</span></label>
+                <input type="tel" name="parentPhone" placeholder="请输入手机号码" required>
+            </div>
+
+            <div class="form-group">
+                <label>家长微信号 <span class="required">*</span></label>
+                <input type="text" name="parentWeChat" placeholder="方便拉群通知" required>
+            </div>
+
+            <button type="submit" class="submit-btn">✅ 确认提交报名信息</button>
+        </form>
     </div>
 
-    <div class="input-wrapper">
-      <input class="input" type="text" id="childIdCard" placeholder="孩子身份证号 (用于唯一身份核验)" maxlength="18" required />
-    </div>
-    
-    <div class="input-wrapper">
-      <label class="file-upload-label">📸 上传孩子照片 (可选)</label>
-      <input class="input file-input" type="file" id="childPhoto" accept="image/*" />
-    </div>
+    <script src="script.js"></script>
 
-    <div class="input-wrapper">
-      <select class="select" id="childGender" required>
-        <option value="" disabled selected>性别</option>
-        <option value="男">男</option>
-        <option value="女">女</option>
-      </select>
-    </div>
-    <div class="input-wrapper">
-      <input class="input" type="text" id="childSchool" placeholder="就读学校" required />
-    </div>
-    <div class="input-wrapper">
-      <input class="input" type="text" id="childClass" placeholder="班级 (如: 三年级二班)" required />
-    </div>
-    <div class="input-wrapper">
-      <input class="input" type="text" id="parentName" placeholder="家长姓名" required />
-    </div>
-    <div class="input-wrapper">
-      <input class="input" type="tel" id="parentPhone" placeholder="家长手机号 (11位)" maxlength="11" required />
-    </div>
-    <div class="input-wrapper">
-      <input class="input" type="text" id="wechatId" placeholder="家长微信号" required />
-    </div>
-
-    <button type="submit" class="button">立即报名</button>
-  </form>
-
-  <div class="footer-text">
-    © 2025 AI Science Club<br>数据安全加密传输
-  </div>
-
-  <script>
-    const supabaseUrl = 'https://d51lj08g91htqli3vlug.baseapi.memfiredb.com';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImV4cCI6MzM0MjgyMTUwNSwiaWF0IjoxNzY2MDIxNTA1LCJpc3MiOiJzdXBhYmFzZSJ9.jdrCafh9UrWQQn-BreixHfHVVP7mPhAakf2E6yN2P6g';
-    const db = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-    async function handleSubmit(event) {
-      event.preventDefault();
-      const submitBtn = document.querySelector('.button');
-      const originalText = submitBtn.innerText;
-      
-      const name = document.getElementById('childName').value.trim();
-      const idCard = document.getElementById('childIdCard').value.trim(); // 获取身份证号
-      const gender = document.getElementById('childGender').value;
-      const school = document.getElementById('childSchool').value.trim();
-      const className = document.getElementById('childClass').value.trim();
-      const parentName = document.getElementById('parentName').value.trim();
-      const phone = document.getElementById('parentPhone').value.trim();
-      const wechat = document.getElementById('wechatId').value.trim();
-      const photoFile = document.getElementById('childPhoto').files[0];
-
-      // 验证1: 手机号格式
-      const phoneRegex = /^\d{11}$/;
-      if (!phoneRegex.test(phone)) {
-        alert('请填写 11 位纯数字手机号码');
-        return false;
-      }
-
-      // 验证2: 身份证号格式 (简单验证：18位，最后一位可以是数字或X)
-      const idCardRegex = /(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
-      if (!idCardRegex.test(idCard)) {
-        alert('身份证号格式不正确！\n请输入18位身份证号码。');
-        return false;
-      }
-
-      submitBtn.disabled = true;
-      submitBtn.innerText = '正在核验身份... 🔍';
-
-      try {
-        // 🌟 查重逻辑：先去数据库问问，这个 id_card 有没有被注册过
-        const { data: existingData, error: checkError } = await db
-          .from('members')
-          .select('id')
-          .eq('id_card', idCard); // 查找 id_card 等于当前输入的记录
-
-        if (checkError) throw checkError;
-
-        // 如果查到了记录 (数组长度 > 0)，说明重复了
-        if (existingData && existingData.length > 0) {
-          alert('🚫 报名失败：该身份证号已被注册！\n\n为了防止重复报名，每个身份证号只能注册一次。\n如有疑问请联系管理员。');
-          submitBtn.disabled = false;
-          submitBtn.innerText = originalText;
-          return; // 直接结束，不往下执行了
-        }
-
-        // --- 以下是正常的上传流程 ---
-
-        let finalPhotoUrl = '';
-        if (photoFile) {
-          submitBtn.innerText = '正在上传照片... 📸';
-          const fileExt = photoFile.name.split('.').pop();
-          const fileName = `${Date.now()}_${phone}.${fileExt}`;
-          const { error: uploadError } = await db.storage.from('photos').upload(fileName, photoFile);
-          if (uploadError) throw new Error('照片上传失败: ' + uploadError.message);
-          const { data: urlData } = db.storage.from('photos').getPublicUrl(fileName);
-          finalPhotoUrl = urlData.publicUrl;
-        }
-
-        submitBtn.innerText = '正在保存档案... 📝';
-        const { error } = await db
-          .from('members') 
-          .insert({ 
-            name: name, 
-            id_card: idCard, // 存入身份证
-            gender: gender, 
-            school: school, 
-            class_name: className, 
-            parent_name: parentName, 
-            phone: phone, 
-            wechat: wechat,
-            photo_url: finalPhotoUrl 
-          });
-
-        if (error) throw error;
-
-        alert('🎉 报名成功！\n身份核验通过，档案已归档。');
-        document.getElementById('registerForm').reset();
-
-      } catch (e) {
-        alert('❌ 出错啦：' + e.message);
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerText = originalText;
-      }
-    }
-
-    document.getElementById('registerForm').onsubmit = handleSubmit;
-  </script>
 </body>
 </html>
