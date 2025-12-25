@@ -342,3 +342,105 @@ function exportSelected() {
 }
 function logoutAction() { currentUser = null; location.reload(); }
 document.getElementById('login-password').addEventListener('keyup', (e)=>{if(e.key==='Enter') loginAction();});
+// ============================================
+// 6. 云端报名逻辑 (新增功能)
+// ============================================
+async function handleJoin(event) {
+    event.preventDefault(); // 阻止页面刷新
+    const submitBtn = document.querySelector('.btn-submit');
+    if(submitBtn) {
+        submitBtn.innerText = "正在提交云端...";
+        submitBtn.disabled = true;
+    }
+
+    // 1. 获取输入值
+    const nameInput = document.getElementById('j-name');
+    const genderInput = document.getElementById('j-gender'); // 假如您的HTML里没写id='j-gender'，这行可能取不到，请检查HTML
+    const idcardInput = document.getElementById('j-idcard');
+    const cityInput = document.getElementById('j-city');
+    const schoolInput = document.getElementById('j-school');
+    const classInput = document.getElementById('j-class'); // 注意HTML里是 j-class 还是 j-grade
+    const phoneInput = document.getElementById('j-phone');
+    const wechatInput = document.getElementById('j-wechat');
+
+    // 防错检查：如果HTML里没找到这些元素，就直接报错
+    if (!nameInput || !idcardInput || !phoneInput || !cityInput) {
+        alert("页面元素缺失，请检查 HTML ID 是否正确");
+        if(submitBtn) { submitBtn.innerText = "立即加入"; submitBtn.disabled = false; }
+        return;
+    }
+
+    const name = nameInput.value.trim();
+    const idcard = idcardInput.value.trim();
+    const city = cityInput.value.trim();
+    const pPhone = phoneInput.value.trim();
+    
+    // 非必填项处理
+    const gender = genderInput ? genderInput.value : "男";
+    const school = schoolInput ? schoolInput.value.trim() : "";
+    const gradeClass = classInput ? classInput.value.trim() : "";
+    const pWechat = wechatInput ? wechatInput.value.trim() : "";
+    
+    // 默认分配到松湖
+    const clubName = "莞-松湖俱乐部"; 
+
+    if (!name || !idcard || !pPhone || !city) {
+        alert("请完善带 * 的必填项");
+        if(submitBtn) { submitBtn.innerText = "立即加入"; submitBtn.disabled = false; }
+        return;
+    }
+
+    try {
+        // --- A. 核心查重：身份证号必须全网唯一 ---
+        const idQuery = new AV.Query('ClubMember');
+        idQuery.equalTo('idcard', idcard);
+        const count = await idQuery.count();
+        if (count > 0) {
+            alert(`报错：身份证号 ${idcard} 已经被注册过了！请勿重复报名。`);
+            if(submitBtn) { submitBtn.innerText = "立即加入"; submitBtn.disabled = false; }
+            return;
+        }
+
+        // --- B. 家长账号处理 (一号多档案逻辑) ---
+        const userQuery = new AV.Query('ClubUser');
+        userQuery.equalTo('username', pPhone);
+        const existingUsers = await userQuery.find();
+
+        if (existingUsers.length === 0) {
+            // 新家长：注册账号
+            const ClubUser = AV.Object.extend('ClubUser');
+            const newUser = new ClubUser();
+            newUser.set('username', pPhone);
+            newUser.set('password', pPhone.substring(pPhone.length - 4));
+            newUser.set('role', 'member');
+            await newUser.save();
+            console.log("新家长账号创建成功");
+        }
+
+        // --- C. 存入孩子档案 ---
+        const ClubMember = AV.Object.extend('ClubMember');
+        const newMember = new ClubMember();
+        newMember.set('name', name);
+        newMember.set('gender', gender);
+        newMember.set('idcard', idcard);
+        newMember.set('city', city);
+        newMember.set('school', school);
+        newMember.set('gradeClass', gradeClass);
+        newMember.set('parentPhone', pPhone);
+        newMember.set('parentWeChat', pWechat);
+        newMember.set('club', clubName);
+        newMember.set('role', 'member');
+        newMember.set('photo', ''); 
+
+        await newMember.save();
+
+        // --- D. 成功收尾 ---
+        alert(`🎉 报名成功！\n\n您的账号是：${pPhone}\n您的密码是：${pPhone.substring(pPhone.length - 4)}\n\n请前往登录页查看档案。`);
+        window.location.href = "login.html";
+
+    } catch (error) {
+        console.error(error);
+        alert("提交失败：" + error.message);
+        if(submitBtn) { submitBtn.innerText = "立即加入"; submitBtn.disabled = false; }
+    }
+}
