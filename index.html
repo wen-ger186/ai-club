@@ -6,12 +6,6 @@
     <title>ai-club.fun - 青少年科创街超</title>
     <script src="//code.bdstatic.com/npm/leancloud-storage@4.12.0/dist/av-min.js"></script>
     <link rel="stylesheet" href="style.css"> 
-    <style>
-        .news-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem; }
-        .news-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #eee; }
-        .news-content { padding: 1.5rem; }
-        .hidden { display: none !important; }
-    </style>
 </head>
 <body>
 
@@ -28,57 +22,106 @@
             <div class="nav-links hidden" id="member-menu">
                 <a href="dashboard.html" style="font-weight:bold; color:#2563EB;">进入管理控制台 &rarr;</a>
             </div>
+            
             <div class="nav-actions">
                 <div id="guest-btns">
-                    <a href="login.html" class="btn btn-login">登录</a>
-                    <a href="join.html" class="btn btn-join">加入</a>
+                    <a href="login.html" class="btn-login">登录</a>
+                    <a href="join.html" class="btn-join">立即加入</a>
                 </div>
                 <div id="member-btns" class="hidden">
-                    <span id="nav-user-name" style="margin-right:10px; font-weight:bold;"></span>
-                    <button onclick="logoutAction()" class="btn btn-login" style="color:red; border-color:red;">退出</button>
+                    <span id="nav-user-name" style="margin-right:10px; font-weight:bold; color:#374151;"></span>
+                    <button onclick="logoutAction()" class="btn-login" style="border-color:red; color:red;">退出</button>
                 </div>
             </div>
         </div>
     </nav>
 
-    <section class="hero">
-        <h1 style="font-size: 3rem; margin-bottom: 0.5rem;">ai-club.fun 俱乐部</h1>
-        <p style="font-size: 1.8rem; font-weight: bold; color: #F59E0B; margin-bottom: 2rem;">青少年朋友的“科创街超”</p>
-        <p style="font-size: 1.1rem; opacity: 0.9; margin-bottom: 2rem;">像逛超市一样便捷地获取前沿科技知识</p>
-        <a href="join.html" class="hero-btn">成为会员</a>
+    <header class="hero">
+        <h1>ai-club.fun 俱乐部</h1>
+        <div class="hero-sub">青少年朋友的“科创街超”</div>
+        <p class="hero-desc">
+            像逛超市一样便捷地获取前沿科技知识。<br>
+            编程 · 机器人 · 竞赛 · 创客 —— 点燃未来的无限可能。
+        </p>
+        <a href="join.html" class="hero-btn">🚀 成为会员</a>
+    </header>
+
+    <section class="club-network">
+        <h2 style="font-size:2rem; margin-bottom:1rem;">我们的分部网络</h2>
+        <p style="color:#666; margin-bottom:20px;">立足东莞，辐射湾区，家门口的科技探索空间</p>
+        <a href="#" class="club-btn">📍 进入【莞-松湖俱乐部】主页</a>
     </section>
 
-    <section id="news" class="features" style="background-color: #f9fafb;">
+    <section id="news" class="section" style="background-color: #f9fafb;">
         <h2 class="section-title">俱乐部风采</h2>
         <div class="news-grid">
-            <div class="news-card">
-                <div class="news-content">
-                    <span style="color:#888;">2025-12-20</span>
-                    <h3>🔥 热烈庆祝“科创街超”松湖分部盛大开业！</h3>
-                    <p>致力于打造家门口的科技探索空间...</p>
+            <article class="news-card">
+                <div class="news-img-box">
+                    <img src="https://picsum.photos/400/250?random=1" alt="新闻配图">
                 </div>
-            </div>
-            <div class="news-card">
                 <div class="news-content">
-                    <span style="color:#888;">2025-12-15</span>
-                    <h3>🏆 喜报：我社学员在省赛斩获佳绩</h3>
-                    <p>AI Club 战队在VEX工程挑战赛中荣获一等奖...</p>
+                    <span class="news-tag">最新动态</span>
+                    <h3 class="news-title">热烈庆祝“科创街超”松湖分部盛大开业！</h3>
+                    <p class="news-desc">配备VEX标准赛台、3D打印工坊...打造家门口最酷的科技空间。</p>
+                    <a href="#" class="news-link">阅读全文 &rarr;</a>
                 </div>
-            </div>
+            </article>
+
+            <article class="news-card">
+                <div class="news-img-box">
+                    <img src="https://picsum.photos/400/250?random=2" alt="新闻配图">
+                </div>
+                <div class="news-content">
+                    <span class="news-tag" style="background:#fff7ed; color:#ea580c;">赛事喜讯</span>
+                    <h3 class="news-title">喜报：我社学员在省青少年机器人大赛斩获佳绩</h3>
+                    <p class="news-desc">AI Club 战队在工程挑战赛项目中荣获一等奖，展现了卓越的工程思维。</p>
+                    <a href="#" class="news-link">阅读全文 &rarr;</a>
+                </div>
+            </article>
+
+            <article class="news-card">
+                <div class="news-img-box">
+                    <img src="https://picsum.photos/400/250?random=3" alt="新闻配图">
+                </div>
+                <div class="news-content">
+                    <span class="news-tag">课程预告</span>
+                    <h3 class="news-title">寒假特训营“火星探险计划”开始招募</h3>
+                    <p class="news-desc">为期7天的沉浸式PBL项目制学习，名额有限，先到先得。</p>
+                    <a href="#" class="news-link">阅读全文 &rarr;</a>
+                </div>
+            </article>
         </div>
     </section>
 
-    <section id="features" class="features">
+    <section id="features" class="section">
         <h2 class="section-title">核心课程体系</h2>
         <div class="cards-grid">
-            <div class="card"><h3>💻 编程闯关</h3><p>Python / C++</p></div>
-            <div class="card"><h3>⚔️ 格斗机器人</h3><p>工程竞技</p></div>
-            <div class="card"><h3>🚁 无人机</h3><p>飞行控制</p></div>
+            <div class="card">
+                <span class="card-icon">💻</span>
+                <h3>编程闯关</h3>
+                <p>Python / C++ 逻辑启蒙，用代码对话未来。</p>
+            </div>
+            <div class="card">
+                <span class="card-icon">⚔️</span>
+                <h3>格斗机器人</h3>
+                <p>硬核工程结构与竞技策略的完美结合。</p>
+            </div>
+            <div class="card">
+                <span class="card-icon">🚁</span>
+                <h3>无人机竞技</h3>
+                <p>学习空气动力学，挑战飞行控制极限。</p>
+            </div>
+            <div class="card">
+                <span class="card-icon">🧱</span>
+                <h3>积木机器人</h3>
+                <p>万丈高楼平地起，机械原理的快乐启蒙。</p>
+            </div>
         </div>
     </section>
     
-    <footer style="text-align:center; padding:2rem; background:#1F2937; color:white;">
-        <p>&copy; 2025 ai-club.fun 俱乐部.</p>
+    <footer style="text-align:center; padding:3rem; background:#1F2937; color:#9ca3af;">
+        <p style="margin-bottom:1rem; color:white; font-size:1.2rem;">ai-club.fun 俱乐部</p>
+        <p>&copy; 2025 All rights reserved.</p>
     </footer>
 
     <script src="logic.js"></script>
