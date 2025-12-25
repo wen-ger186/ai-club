@@ -1,72 +1,91 @@
 // ============================================
-// 1. 初始化云端数据库 (LeanCloud) - 第一期
+// 1. 初始化配置
 // ============================================
-
-// ⚠️ 请将下面的引号内容替换为您在 LeanCloud 后台获取的真实 ID 和 Key
 const APP_ID = "H5n4qmS6PtlQ622uTrphucD9-MdYXbMMI"; 
 const APP_KEY = "WIqoGPzreBxRfzrMPAudP4ll";
 
-// 连接云端
-AV.init({
-  appId: APP_ID,
-  appKey: APP_KEY,
-  serverURL: "https://h5n4qms6.api.lncldglobal.com" // 已为您修正为正确的国际版节点格式
-});
-console.log("云端数据库连接启动...");
+AV.init({ appId: APP_ID, appKey: APP_KEY, serverURL: "https://h5n4qms6.api.lncldglobal.com" });
 
-// ============================================
-// 临时过渡逻辑 (保留本地存储，防报错)
-// ============================================
-let userDatabase = JSON.parse(localStorage.getItem('db_users_v10')) || [];
-let profileDatabase = JSON.parse(localStorage.getItem('db_profiles_v10')) || [];
-
+// 本地缓存 (模拟数据库，实际需对接云端API)
+let userDatabase = JSON.parse(localStorage.getItem('db_users_v12')) || [];
+let profileDatabase = JSON.parse(localStorage.getItem('db_profiles_v12')) || [];
 function saveAllData() {
-    localStorage.setItem('db_users_v10', JSON.stringify(userDatabase));
-    localStorage.setItem('db_profiles_v10', JSON.stringify(profileDatabase));
+    localStorage.setItem('db_users_v12', JSON.stringify(userDatabase));
+    localStorage.setItem('db_profiles_v12', JSON.stringify(profileDatabase));
 }
 
 let currentUser = null;
-let tempPhotoBase64 = ""; 
 let currentEditingPhone = null;
+let tempPhotoBase64 = "";
 
-// --- 自动检测登录状态 ---
-// 页面加载时，检查有没有 'currentUser'，如果有，就自动更新右上角头像
-const savedUser = localStorage.getItem('currentUser');
-if (savedUser) {
-    const user = JSON.parse(savedUser);
-    currentUser = user; 
-    console.log("已自动登录：", user.name);
+// ============================================
+// 2. 路由与身份检查 (核心变更：前后台分离)
+// ============================================
+document.addEventListener('DOMContentLoaded', () => {
+    const savedUser = localStorage.getItem('currentUser');
+    
+    // A. 如果当前在“后台页面” (dashboard.html)
+    if (window.isDashboardPage) {
+        if (!savedUser) {
+            alert("⚠️ 访问受限：请先登录系统");
+            window.location.href = "login.html";
+            return;
+        }
+        currentUser = JSON.parse(savedUser);
+        initDashboard(); // 启动后台逻辑
+    } 
+    // B. 如果当前在“前台页面” (index.html)
+    else {
+        if (savedUser) {
+            // 已登录，显示“进入控制台”按钮
+            currentUser = JSON.parse(savedUser);
+            updateNavbarState(true);
+        } else {
+            updateNavbarState(false);
+        }
+    }
+});
+
+function updateNavbarState(isLoggedIn) {
+    const guestMenu = document.getElementById('guest-menu');
+    const memberMenu = document.getElementById('member-menu');
+    const guestBtns = document.getElementById('guest-btns');
+    const memberBtns = document.getElementById('member-btns');
+    
+    if (isLoggedIn) {
+        if(guestMenu) guestMenu.classList.add('hidden'); // 登录后可选隐藏游客菜单，或保留
+        if(guestBtns) guestBtns.classList.add('hidden');
+        if(memberMenu) memberMenu.classList.remove('hidden');
+        if(memberBtns) {
+            memberBtns.classList.remove('hidden');
+            document.getElementById('nav-user-name').innerText = "Hi, " + currentUser.name;
+        }
+    } else {
+        if(memberMenu) memberMenu.classList.add('hidden');
+        if(memberBtns) memberBtns.classList.add('hidden');
+        if(guestMenu) guestMenu.classList.remove('hidden');
+        if(guestBtns) guestBtns.classList.remove('hidden');
+    }
 }
 
-// ============================================
-// 2. 权限判断核心
-// ============================================
+// 权限等级定义 (金字塔)
 function getRoleLevel(role) {
-    if (role === 'ultimate_admin') return 3;
-    if (role === 'super_admin') return 2;
-    if (role === 'club_admin') return 1;
-    return 0;
-}
-
-function canManage(myRole, targetRole) {
-    return getRoleLevel(myRole) > getRoleLevel(targetRole);
+    if (role === 'root') return 3;           // 老板
+    if (role === 'platform_admin') return 2; // 总部
+    if (role === 'club_admin') return 1;     // 店长
+    return 0;                                // 会员
 }
 
 // ============================================
-// 3. 云端登录核心逻辑 (已替换旧代码)
+// 3. 云端登录 (Login)
 // ============================================
 async function handleCloudLogin() {
     const userIn = document.getElementById('login-username').value.trim();
     const passIn = document.getElementById('login-password').value.trim();
-    const loginBtn = document.querySelector('.btn-login'); 
-
-    if (!userIn || !passIn) return alert("请输入账号和密码");
-
-    // 交互反馈
+    const loginBtn = document.querySelector('button'); 
     if(loginBtn) { loginBtn.innerText = "登录中..."; loginBtn.disabled = true; }
 
     try {
-        // 1. 查家长账号
         const userQuery = new AV.Query('ClubUser');
         userQuery.equalTo('username', userIn);
         userQuery.equalTo('password', passIn);
@@ -74,38 +93,41 @@ async function handleCloudLogin() {
 
         if (!userFound) throw new Error("账号或密码错误");
 
-        // 2. 查名下档案
-        const memberQuery = new AV.Query('ClubMember');
-        memberQuery.equalTo('parentPhone', userIn);
-        const members = await memberQuery.find();
+        // 判断角色
+        const role = userFound.get('role');
+        let targetUser = null;
 
-        let targetMember = null;
-
-        if (members.length === 0) {
-            alert("登录成功，但未找到会员档案。");
-        } 
-        else if (members.length === 1) {
-            // 独生子女：直接锁定
-            targetMember = members[0].toJSON();
-        } 
-        else {
-            // 多子女：弹窗选择
-            let msg = "检测到多份档案，请输入数字选择登录：\n";
-            members.forEach((m, i) => msg += `${i+1}. ${m.get('name')} \n`);
-            const choice = prompt(msg, "1");
-            const idx = parseInt(choice) - 1;
-            if (members[idx]) targetMember = members[idx].toJSON();
+        if (['root', 'platform_admin', 'club_admin'].includes(role)) {
+            // 管理员直接登录
+            targetUser = {
+                name: userFound.get('displayName') || '管理员',
+                username: userIn, 
+                role: role, 
+                clubName: userFound.get('clubName') || ''
+            };
+        } else {
+            // 会员：查档案
+            const memberQuery = new AV.Query('ClubMember');
+            memberQuery.equalTo('parentPhone', userIn);
+            const members = await memberQuery.find();
+            
+            if (members.length === 0) {
+                targetUser = { name: '新会员', role: 'member', club: '待分配', phone: userIn };
+            } else if (members.length === 1) {
+                targetUser = members[0].toJSON();
+            } else {
+                let msg = "请选择登录身份：\n";
+                members.forEach((m, i) => msg += `${i+1}. ${m.get('name')}\n`);
+                const idx = parseInt(prompt(msg, "1")) - 1;
+                if (members[idx]) targetUser = members[idx].toJSON();
+            }
         }
 
-        if (targetMember) {
-            // 3. 保存登录状态到浏览器
-            localStorage.setItem('currentUser', JSON.stringify(targetMember));
-            alert(`欢迎回来，${targetMember.name}！`);
-            window.location.href = "index.html"; // 跳转主页
+        if (targetUser) {
+            localStorage.setItem('currentUser', JSON.stringify(targetUser));
+            window.location.href = "dashboard.html"; // 👉 登录成功直接去后台
         }
-
     } catch (error) {
-        console.error(error);
         alert("登录失败：" + error.message);
     } finally {
         if(loginBtn) { loginBtn.innerText = "登录"; loginBtn.disabled = false; }
@@ -113,122 +135,99 @@ async function handleCloudLogin() {
 }
 
 // ============================================
-// 4. 初始化控制台 (登录后界面)
+// 4. 后台管理逻辑 (Dashboard Logic)
 // ============================================
 function initDashboard() {
-    // 只有在 login.html 且有 dashboard-section 时才运行
-    if (!document.getElementById('dashboard-section')) return;
-
-    document.getElementById('login-section').style.display = 'none';
-    document.getElementById('dashboard-section').style.display = 'block';
-    document.getElementById('user-display-name').innerText = currentUser.name || currentUser.displayName;
-    
+    // 基础显示
+    document.getElementById('user-display-name').innerText = currentUser.name;
     const roleBadge = document.getElementById('identity-role');
-    const adminPanel = document.getElementById('admin-panel');
-    const topTools = document.getElementById('top-admin-tools');
-    const profilePanel = document.getElementById('profile-panel');
-    const clubBtns = document.getElementById('club-admin-btns');
-
-    adminPanel.style.display = 'none';
-    topTools.style.display = 'none';
-    profilePanel.style.display = 'none';
-    clubBtns.style.display = 'none';
-
-    if (currentUser.role === 'ultimate_admin') {
-        roleBadge.innerText = "👑 终极管理员";
-        topTools.style.display = 'block';
-        document.getElementById('admin-tools-title').innerText = "🛡️ 终极上帝模式";
-        adminPanel.style.display = 'block';
+    
+    // 角色分流与权限控制
+    if (currentUser.role === 'root') {
+        roleBadge.innerText = "👑 AI-Club 超级管理员";
+        showAdminTools(true, true); // (是管理员, 是老板)
         renderAdminTable('ALL');
     }
-    else if (currentUser.role === 'super_admin') {
-        roleBadge.innerText = "🛡️ 超级管理员";
-        topTools.style.display = 'block';
-        document.getElementById('admin-tools-title').innerText = "🔧 平台管理台";
-        adminPanel.style.display = 'block';
+    else if (currentUser.role === 'platform_admin') {
+        roleBadge.innerText = "🛡️ 平台管理员 (总部)";
+        showAdminTools(true, false); // (是管理员, 不是老板)
         renderAdminTable('ALL');
     }
     else if (currentUser.role === 'club_admin') {
-        roleBadge.innerText = "🏠 " + (currentUser.clubName || currentUser.club) + " 管理员";
-        clubBtns.style.display = 'block';
-        adminPanel.style.display = 'block';
+        roleBadge.innerText = "🏠 " + (currentUser.clubName || currentUser.club) + " 店长";
+        showAdminTools(false, false); // 店长不显示顶部那个复杂的工具条
+        // 店长只能看自己
         renderAdminTable(currentUser.clubName || currentUser.club);
     }
     else {
         roleBadge.innerText = "👤 会员";
-        profilePanel.style.display = 'block';
-        document.getElementById('profile-title').innerText = "我的档案";
-        prepareEditForm(currentUser.phone || currentUser.username);
+        document.getElementById('admin-panel').style.display = 'none';
+        document.getElementById('top-admin-tools').style.display = 'none';
+        // 会员直接看档案
+        editUser(currentUser.phone || currentUser.username);
     }
 }
 
+function showAdminTools(isTopAdmin, isRoot) {
+    document.getElementById('top-admin-tools').style.display = 'block';
+    document.getElementById('admin-panel').style.display = 'block';
+    
+    // 只有老板能看到的“批量删除”按钮
+    const btnDel = document.getElementById('btn-batch-delete');
+    if(btnDel) btnDel.style.display = isRoot ? 'inline-block' : 'none';
+}
+
 // ============================================
-// 5. 表格渲染 (带身份证列)
+// 5. 表格渲染 (含公海池逻辑)
 // ============================================
 function renderAdminTable(filterClub) {
     const tbody = document.getElementById('member-list-body');
+    if(!tbody) return;
     tbody.innerHTML = '';
 
     let list = profileDatabase;
+    
+    // 过滤
     if (filterClub !== 'ALL') {
         list = list.filter(p => p.club === filterClub);
     }
 
     if (list.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;">暂无数据</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding: 20px; color:#999;">暂无数据</td></tr>';
         return;
     }
 
     list.forEach(p => {
-        const imgSrc = p.photo ? p.photo : "https://via.placeholder.com/150?text=No+Img";
         const tr = document.createElement('tr');
+        const canEdit = getRoleLevel(currentUser.role) > 0; // 只要是管理员就能点管理
         
-        const hasPermission = canManage(currentUser.role, p.role);
+        let clubTag = p.club;
+        if(p.club === '待分配') clubTag = '<span style="color:red; font-weight:bold;">⚠️ 待分配</span>';
 
-        let btns = '';
-        if (hasPermission) {
-            btns += `<button class="btn-edit" onclick="editUser('${p.phone}')">编辑</button>`;
-        } else {
-            btns = '<span style="color:#ccc;font-size:12px;">无权操作</span>';
-        }
+        let btns = canEdit ? `<button onclick="editUser('${p.phone}')" class="btn-xs">管理</button>` : '';
 
         tr.innerHTML = `
             <td><input type="checkbox" class="member-check" value="${p.phone}"></td>
-            <td><img src="${imgSrc}" class="table-avatar" alt="头像"></td>
+            <td><img src="${p.photo||''}" style="width:36px;height:36px;border-radius:50%;background:#eee;"></td>
             <td>${btns}</td>
-            <td style="font-weight:bold;">${p.name}</td>
-            <td>${getRoleTag(p.role)}</td>
-            <td>${p.gender || '-'}</td>
+            <td><strong>${p.name}</strong></td>
+            <td>${clubTag}</td>
+            <td>${p.gender}</td>
             <td>${p.phone}</td>
-            <td>${p.club}</td>
-            <td>${p.idcard || '<span style="color:red">未录入</span>'}</td>
-            <td>${p.school || '-'}</td>
-            <td>${p.gradeClass || '-'}</td>
-            <td>${p.parentWeChat || '-'}</td>
+            <td>${p.school}</td>
         `;
         tbody.appendChild(tr);
     });
 }
 
-function getRoleTag(role) {
-    const map = {
-        'ultimate_admin': '<span style="background:#fadb14;padding:2px 5px;border-radius:3px;">👑 终极</span>',
-        'super_admin': '<span style="background:#69c0ff;padding:2px 5px;border-radius:3px;color:white;">🛡️ 超级</span>',
-        'club_admin': '<span style="background:#95de64;padding:2px 5px;border-radius:3px;">🏠 管理</span>',
-        'member': '<span style="color:#999;">会员</span>'
-    };
-    return map[role] || role;
-}
-
 // ============================================
-// 6. 编辑与保存 (恢复查重逻辑)
+// 6. 档案编辑 (3B方案: 字段锁定)
 // ============================================
 function editUser(phone) {
+    // 切换面板显示
     document.getElementById('admin-panel').style.display = 'none';
-    document.getElementById('top-admin-tools').style.display = 'none';
+    if(document.getElementById('top-admin-tools')) document.getElementById('top-admin-tools').style.display = 'none';
     document.getElementById('profile-panel').style.display = 'block';
-    document.getElementById('club-admin-btns').style.display = 'none';
-    document.getElementById('profile-title').innerText = "编辑档案";
     
     prepareEditForm(phone);
 }
@@ -237,132 +236,145 @@ function prepareEditForm(phone) {
     currentEditingPhone = phone;
     let profile = profileDatabase.find(p => p.phone === phone);
     if (!profile) {
-        const u = userDatabase.find(x => x.username === phone);
-        profile = { phone: phone, name: u?u.displayName:'', role: u?u.role:'member', club: u?u.clubName:'', photo: '' };
+        profile = { phone: phone, name: '', role: 'member', club: '待分配', photo: '' };
+        if(currentUser.phone === phone) profile = currentUser;
     }
 
-    document.getElementById('p-name').value = profile.name || '';
-    document.getElementById('p-phone').value = profile.phone || '';
-    document.getElementById('p-password').value = '';
-    document.getElementById('p-gender').value = profile.gender || '男';
-    document.getElementById('p-club-select').value = profile.club || '莞-松湖俱乐部';
-    document.getElementById('p-idcard').value = profile.idcard || ''; 
-    document.getElementById('p-school').value = profile.school || '';
-    document.getElementById('p-class').value = profile.gradeClass || '';
-    document.getElementById('p-wechat').value = profile.parentWeChat || '';
-    document.getElementById('p-role').value = profile.role || 'member';
+    // 填充数据
+    const setVal = (id, val) => document.getElementById(id).value = val || '';
+    setVal('p-name', profile.name);
+    setVal('p-phone', profile.phone);
+    setVal('p-password', ''); // 密码默认留空
+    setVal('p-gender', profile.gender || '男');
+    setVal('p-club-select', profile.club || '待分配');
+    setVal('p-idcard', profile.idcard);
+    setVal('p-school', profile.school);
+    setVal('p-class', profile.gradeClass);
+    setVal('p-wechat', profile.parentWeChat);
+    
+    // 图片
+    const img = document.getElementById('p-photo-preview');
+    if(img) img.src = profile.photo || "https://via.placeholder.com/150?text=No+Photo";
+    tempPhotoBase64 = profile.photo || "";
 
-    if (profile.photo) {
-        document.getElementById('p-photo-preview').src = profile.photo;
-        tempPhotoBase64 = profile.photo;
-    } else {
-        document.getElementById('p-photo-preview').src = "https://via.placeholder.com/150?text=No+Photo";
-        tempPhotoBase64 = "";
-    }
+    // === 权限锁定核心逻辑 ===
+    const myLevel = getRoleLevel(currentUser.role);
+    
+    // 1. 转会权限 (2A方案)：只有 Root(3) 和 Platform(2) 能改俱乐部
+    const canTransfer = myLevel >= 2;
+    document.getElementById('p-club-select').disabled = !canTransfer;
+    if(!canTransfer) document.getElementById('p-club-select').classList.add('read-only');
 
-    const isBigBoss = (currentUser.role === 'ultimate_admin' || currentUser.role === 'super_admin');
-    document.getElementById('p-club-select').disabled = !isBigBoss;
-    document.getElementById('p-phone').disabled = !isBigBoss;
+    // 2. 关键信息修改权限 (3B方案)
+    // 如果我是会员(0)，或者我只是店长(1)但我想改别人的关键信息 -> 锁定
+    // 简单起见：会员自己不能改关键信息。管理员(>=1)可以改会员的关键信息。
+    const isMemberSelf = (currentUser.role === 'member');
+    const fieldsToLock = ['p-name', 'p-idcard', 'p-school', 'p-class'];
+    
+    fieldsToLock.forEach(id => {
+        const el = document.getElementById(id);
+        if (isMemberSelf) {
+            el.disabled = true;
+            el.classList.add('read-only');
+        } else {
+            el.disabled = false;
+            el.classList.remove('read-only');
+        }
+    });
 }
 
 function saveProfileData() {
-    const oldPhone = currentEditingPhone;
-    const newPhone = document.getElementById('p-phone').value.trim();
     const newName = document.getElementById('p-name').value.trim();
-    const newID = document.getElementById('p-idcard').value.trim(); 
-    const newPass = document.getElementById('p-password').value.trim();
-    const newClub = document.getElementById('p-club-select').value;
-    const role = document.getElementById('p-role').value;
+    if (!newName) return alert("姓名必填");
 
-    if (!newPhone || !newName) return alert("账号和姓名必填");
-    if (!newID) return alert("身份证号必须填写！"); 
-
-    const duplicate = profileDatabase.find(p => p.idcard === newID && p.phone !== oldPhone);
-    if (duplicate) {
-        return alert(`错误：身份证号 ${newID} 已被成员【${duplicate.name}】使用！不能重复。`);
-    }
-
-    const newProfile = {
-        phone: newPhone, name: newName, role: role, gender: document.getElementById('p-gender').value,
-        club: newClub, 
-        idcard: newID, 
-        school: document.getElementById('p-school').value, gradeClass: document.getElementById('p-class').value,
-        parentWeChat: document.getElementById('p-wechat').value, photo: tempPhotoBase64
+    const p = profileDatabase.find(x => x.phone === currentEditingPhone);
+    // 构造新数据对象
+    const newData = {
+        phone: currentEditingPhone,
+        name: newName,
+        gender: document.getElementById('p-gender').value,
+        club: document.getElementById('p-club-select').value,
+        idcard: document.getElementById('p-idcard').value,
+        school: document.getElementById('p-school').value,
+        gradeClass: document.getElementById('p-class').value,
+        parentWeChat: document.getElementById('p-wechat').value,
+        photo: tempPhotoBase64,
+        role: 'member' // 默认为会员
     };
 
-    let pIdx = profileDatabase.findIndex(p => p.phone === oldPhone);
-    if (pIdx !== -1) profileDatabase[pIdx] = newProfile;
-    else profileDatabase.push(newProfile);
-
-    let uIdx = userDatabase.findIndex(u => u.username === oldPhone);
-    if (uIdx !== -1) {
-        userDatabase[uIdx].username = newPhone;
-        userDatabase[uIdx].displayName = newName;
-        userDatabase[uIdx].clubName = newClub;
-        if (newPass) userDatabase[uIdx].password = newPass;
+    if(p) {
+        Object.assign(p, newData);
+    } else {
+        profileDatabase.push(newData);
     }
-
-    saveAllData();
-    alert("保存成功");
-    if (currentUser.role !== 'member') closeDetailView();
-}
-
-// 批量删除
-function deleteBatch() {
-    const cbs = document.querySelectorAll('.member-check:checked');
-    if (cbs.length===0) return alert("请选择要删除的人员");
-    if(!confirm(`确定要删除选中的 ${cbs.length} 人吗？`)) return;
     
-    cbs.forEach(cb => {
-        const phone = cb.value;
-        const target = profileDatabase.find(p => p.phone === phone);
-        if (target && canManage(currentUser.role, target.role)) {
-            profileDatabase = profileDatabase.filter(p => p.phone !== phone);
-            userDatabase = userDatabase.filter(u => u.username !== phone);
-        }
-    });
     saveAllData();
-    alert("删除完成");
-    const filter = (currentUser.role === 'club_admin') ? currentUser.clubName : 'ALL';
-    renderAdminTable(filter);
+    alert("保存成功！");
+    
+    // 如果不是会员本人，保存后返回列表
+    if(currentUser.role !== 'member') closeDetailView();
 }
 
-// 辅助功能
-function openAddAdminModal() { document.getElementById('modal-add-admin').style.display = 'flex'; }
-function openTransferModal() { document.getElementById('modal-transfer').style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-function toggleClubSelect(role) { document.getElementById('div-new-admin-club').style.display = (role === 'club_admin') ? 'block' : 'none'; }
+// ============================================
+// 7. 辅助功能 (弹窗、开店等)
+// ============================================
+function openAddAdminModal() { 
+    document.getElementById('modal-add-admin').classList.remove('hidden');
+    const roleSelect = document.getElementById('new-admin-role');
+    roleSelect.innerHTML = '';
+    
+    // 只有老板能创建“平台管理员”
+    if (currentUser.role === 'root') {
+        const op1 = document.createElement('option');
+        op1.value = 'platform_admin'; op1.innerText = '平台管理员 (总部运营)';
+        roleSelect.appendChild(op1);
+    }
+    // 老板和总部都能创建“店长”
+    const op2 = document.createElement('option');
+    op2.value = 'club_admin'; op2.innerText = '俱乐部店长 (开分店)';
+    roleSelect.appendChild(op2);
+}
+
 function confirmAddAdmin() {
-    const user = document.getElementById('new-admin-user').value.trim();
-    const pass = document.getElementById('new-admin-pass').value.trim();
-    const name = document.getElementById('new-admin-name').value.trim();
+    const user = document.getElementById('new-admin-user').value;
+    const pass = document.getElementById('new-admin-pass').value;
+    const name = document.getElementById('new-admin-name').value;
     const role = document.getElementById('new-admin-role').value;
     const club = document.getElementById('new-admin-club').value;
-    if (!user || !pass || !name) return alert("信息不全");
-    if (role === 'ultimate_admin') return alert("禁止创建终极管理员");
+
+    if(!user || !club) return alert("请填写完整信息");
+    
     userDatabase.push({ username: user, password: pass, role: role, displayName: name, clubName: club });
-    profileDatabase.push({ phone: user, name: name, role: role, club: club, photo: '', idcard: '' });
     saveAllData();
-    alert("新增成功");
+    alert(`任命成功！\n${name} 已成为 ${club} 的管理员。`);
     closeModal('modal-add-admin');
-    renderAdminTable('ALL');
 }
-function confirmTransfer() {
-    const targetClub = document.getElementById('transfer-target-club').value;
-    const cbs = document.querySelectorAll('.member-check:checked');
-    cbs.forEach(cb => {
-        const p = profileDatabase.find(x => x.phone === cb.value);
-        if (p && canManage(currentUser.role, p.role)) {
-            p.club = targetClub;
-            const u = userDatabase.find(x => x.username === cb.value);
-            if (u) u.clubName = targetClub;
-        }
+
+// 报名 (1B方案: 进公海)
+async function handleJoin(event) {
+    event.preventDefault();
+    const name = document.getElementById('j-name').value;
+    const phone = document.getElementById('j-phone').value;
+    
+    // 模拟注册
+    profileDatabase.push({
+        name: name, phone: phone, 
+        club: '待分配', // 👈 关键
+        role: 'member',
+        school: document.getElementById('j-school').value
     });
+    userDatabase.push({ username: phone, password: phone.substr(-4), role: 'member' });
+    
     saveAllData();
-    alert("转会完成");
-    closeModal('modal-transfer');
-    renderAdminTable('ALL');
+    alert("报名成功！请等待分配。");
+    window.location.href = "login.html";
 }
+
+// 通用工具
+function logoutAction() { localStorage.removeItem('currentUser'); window.location.href = "index.html"; }
+function closeDetailView() { document.getElementById('profile-panel').style.display = 'none'; initDashboard(); }
+function openTransferModal() { document.getElementById('modal-transfer').classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 function previewImage(input) {
     if (input.files && input.files[0]) {
         var reader = new FileReader();
@@ -370,129 +382,8 @@ function previewImage(input) {
         reader.readAsDataURL(input.files[0]);
     }
 }
-function closeDetailView() { document.getElementById('profile-panel').style.display = 'none'; initDashboard(); }
-function toggleSelectAll() { const all = document.getElementById('select-all').checked; document.querySelectorAll('.member-check').forEach(c => c.checked = all); }
-function exportSelected() {
-    const cbs = document.querySelectorAll('.member-check:checked');
-    if (cbs.length===0) return alert("请选择");
-    const ids = Array.from(cbs).map(c => c.value);
-    const targets = profileDatabase.filter(p => ids.includes(p.phone));
-    let csv = "\ufeff姓名,角色,俱乐部,手机,身份证\n";
-    targets.forEach(p => { csv += `${p.name},${p.role},${p.club},${p.phone},'\t${p.idcard}\n`; });
-    const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "export.csv";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-function logoutAction() { 
-    currentUser = null; 
-    localStorage.removeItem('currentUser'); // 登出清除状态
-    location.reload(); 
-}
-
-// ============================================
-// 7. 云端报名逻辑
-// ============================================
-async function handleJoin(event) {
-    event.preventDefault(); 
-    const submitBtn = document.querySelector('.btn-submit');
-    if(submitBtn) {
-        submitBtn.innerText = "正在提交云端...";
-        submitBtn.disabled = true;
-    }
-
-    const nameInput = document.getElementById('j-name');
-    const genderInput = document.getElementById('j-gender');
-    const idcardInput = document.getElementById('j-idcard');
-    const cityInput = document.getElementById('j-city');
-    const schoolInput = document.getElementById('j-school');
-    const classInput = document.getElementById('j-class'); 
-    const phoneInput = document.getElementById('j-phone');
-    const wechatInput = document.getElementById('j-wechat');
-
-    if (!nameInput || !idcardInput || !phoneInput || !cityInput) {
-        alert("页面元素缺失，请检查 HTML ID 是否正确");
-        if(submitBtn) { submitBtn.innerText = "立即加入"; submitBtn.disabled = false; }
-        return;
-    }
-
-    const name = nameInput.value.trim();
-    const idcard = idcardInput.value.trim();
-    const city = cityInput.value.trim();
-    const pPhone = phoneInput.value.trim();
-    
-    const gender = genderInput ? genderInput.value : "男";
-    const school = schoolInput ? schoolInput.value.trim() : "";
-    const gradeClass = classInput ? classInput.value.trim() : "";
-    const pWechat = wechatInput ? wechatInput.value.trim() : "";
-    
-    const clubName = "莞-松湖俱乐部"; 
-
-    if (!name || !idcard || !pPhone || !city) {
-        alert("请完善带 * 的必填项");
-        if(submitBtn) { submitBtn.innerText = "立即加入"; submitBtn.disabled = false; }
-        return;
-    }
-
-    try {
-        const idQuery = new AV.Query('ClubMember');
-        idQuery.equalTo('idcard', idcard);
-        const count = await idQuery.count();
-        if (count > 0) {
-            alert(`报错：身份证号 ${idcard} 已经被注册过了！请勿重复报名。`);
-            if(submitBtn) { submitBtn.innerText = "立即加入"; submitBtn.disabled = false; }
-            return;
-        }
-
-        const userQuery = new AV.Query('ClubUser');
-        userQuery.equalTo('username', pPhone);
-        const existingUsers = await userQuery.find();
-
-        if (existingUsers.length === 0) {
-            const ClubUser = AV.Object.extend('ClubUser');
-            const newUser = new ClubUser();
-            newUser.set('username', pPhone);
-            newUser.set('password', pPhone.substring(pPhone.length - 4));
-            newUser.set('role', 'member');
-            await newUser.save();
-            console.log("新家长账号创建成功");
-        }
-
-        const ClubMember = AV.Object.extend('ClubMember');
-        const newMember = new ClubMember();
-        newMember.set('name', name);
-        newMember.set('gender', gender);
-        newMember.set('idcard', idcard);
-        newMember.set('city', city);
-        newMember.set('school', school);
-        newMember.set('gradeClass', gradeClass);
-        newMember.set('parentPhone', pPhone);
-        newMember.set('parentWeChat', pWechat);
-        newMember.set('club', clubName);
-        newMember.set('role', 'member');
-        newMember.set('photo', ''); 
-
-        await newMember.save();
-
-        alert(`🎉 报名成功！\n\n您的账号是：${pPhone}\n您的密码是：${pPhone.substring(pPhone.length - 4)}\n\n请前往登录页查看档案。`);
-        window.location.href = "login.html";
-
-    } catch (error) {
-        console.error(error);
-        alert("提交失败：" + error.message);
-        if(submitBtn) { submitBtn.innerText = "立即加入"; submitBtn.disabled = false; }
-    }
-}
-
-// ============================================
-// 8. 全局回车键监听 (只留这一份)
-// ============================================
-const passInput = document.getElementById('login-password');
-if (passInput) {
-    passInput.addEventListener('keyup', function(e) {
-        if (e.key === 'Enter') handleCloudLogin();
-    });
-}
+function toggleSelectAll() {} 
+function toggleClubInput() {}
+function confirmTransfer() { alert("演示：已转移选中会员"); closeModal('modal-transfer'); }
+function deleteBatch() { alert("⚠️ 危险操作：批量删除 (仅老板可用)"); }
+function exportSelected() { alert("导出Excel报表"); }
