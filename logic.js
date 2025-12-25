@@ -1,8 +1,4 @@
 // ============================================
-// 1. 初始化数据 (四级架构)
-// ============================================
-
-// ============================================
 // 1. 初始化云端数据库 (LeanCloud) - 第一期
 // ============================================
 
@@ -14,20 +10,17 @@ const APP_KEY = "WIqoGPzreBxRfzrMPAudP4ll";
 AV.init({
   appId: APP_ID,
   appKey: APP_KEY,
-  serverURL: "https://ulenn61j.api.lncldglobal.com" // 国际版通用节点
+  serverURL: "https://h5n4qms6.api.lncldglobal.com" // 已为您修正为正确的国际版节点格式
 });
 console.log("云端数据库连接启动...");
 
 // ============================================
 // 临时过渡逻辑 (保留本地存储，防报错)
 // ============================================
-// 为了不让下面的代码报错，我们先定义这两个空数组
-// 等下一期完全切换到云端登录后，这部分也会被删掉
 let userDatabase = JSON.parse(localStorage.getItem('db_users_v10')) || [];
 let profileDatabase = JSON.parse(localStorage.getItem('db_profiles_v10')) || [];
 
 function saveAllData() {
-    // 暂时还存本地，保持旧功能可用
     localStorage.setItem('db_users_v10', JSON.stringify(userDatabase));
     localStorage.setItem('db_profiles_v10', JSON.stringify(profileDatabase));
 }
@@ -35,6 +28,15 @@ function saveAllData() {
 let currentUser = null;
 let tempPhotoBase64 = ""; 
 let currentEditingPhone = null;
+
+// --- 自动检测登录状态 ---
+// 页面加载时，检查有没有 'currentUser'，如果有，就自动更新右上角头像
+const savedUser = localStorage.getItem('currentUser');
+if (savedUser) {
+    const user = JSON.parse(savedUser);
+    currentUser = user; 
+    console.log("已自动登录：", user.name);
+}
 
 // ============================================
 // 2. 权限判断核心
@@ -51,26 +53,75 @@ function canManage(myRole, targetRole) {
 }
 
 // ============================================
-// 3. 登录与主页
+// 3. 云端登录核心逻辑 (已替换旧代码)
 // ============================================
-function loginAction() {
+async function handleCloudLogin() {
     const userIn = document.getElementById('login-username').value.trim();
     const passIn = document.getElementById('login-password').value.trim();
-    const found = userDatabase.find(u => u.username === userIn && u.password === passIn);
+    const loginBtn = document.querySelector('.btn-login'); 
 
-    if (found) {
-        currentUser = found;
-        document.getElementById('login-error').style.display = 'none';
-        initDashboard();
-    } else {
-        document.getElementById('login-error').style.display = 'block';
+    if (!userIn || !passIn) return alert("请输入账号和密码");
+
+    // 交互反馈
+    if(loginBtn) { loginBtn.innerText = "登录中..."; loginBtn.disabled = true; }
+
+    try {
+        // 1. 查家长账号
+        const userQuery = new AV.Query('ClubUser');
+        userQuery.equalTo('username', userIn);
+        userQuery.equalTo('password', passIn);
+        const userFound = await userQuery.first();
+
+        if (!userFound) throw new Error("账号或密码错误");
+
+        // 2. 查名下档案
+        const memberQuery = new AV.Query('ClubMember');
+        memberQuery.equalTo('parentPhone', userIn);
+        const members = await memberQuery.find();
+
+        let targetMember = null;
+
+        if (members.length === 0) {
+            alert("登录成功，但未找到会员档案。");
+        } 
+        else if (members.length === 1) {
+            // 独生子女：直接锁定
+            targetMember = members[0].toJSON();
+        } 
+        else {
+            // 多子女：弹窗选择
+            let msg = "检测到多份档案，请输入数字选择登录：\n";
+            members.forEach((m, i) => msg += `${i+1}. ${m.get('name')} \n`);
+            const choice = prompt(msg, "1");
+            const idx = parseInt(choice) - 1;
+            if (members[idx]) targetMember = members[idx].toJSON();
+        }
+
+        if (targetMember) {
+            // 3. 保存登录状态到浏览器
+            localStorage.setItem('currentUser', JSON.stringify(targetMember));
+            alert(`欢迎回来，${targetMember.name}！`);
+            window.location.href = "index.html"; // 跳转主页
+        }
+
+    } catch (error) {
+        console.error(error);
+        alert("登录失败：" + error.message);
+    } finally {
+        if(loginBtn) { loginBtn.innerText = "登录"; loginBtn.disabled = false; }
     }
 }
 
+// ============================================
+// 4. 初始化控制台 (登录后界面)
+// ============================================
 function initDashboard() {
+    // 只有在 login.html 且有 dashboard-section 时才运行
+    if (!document.getElementById('dashboard-section')) return;
+
     document.getElementById('login-section').style.display = 'none';
     document.getElementById('dashboard-section').style.display = 'block';
-    document.getElementById('user-display-name').innerText = currentUser.displayName;
+    document.getElementById('user-display-name').innerText = currentUser.name || currentUser.displayName;
     
     const roleBadge = document.getElementById('identity-role');
     const adminPanel = document.getElementById('admin-panel');
@@ -98,21 +149,21 @@ function initDashboard() {
         renderAdminTable('ALL');
     }
     else if (currentUser.role === 'club_admin') {
-        roleBadge.innerText = "🏠 " + currentUser.clubName + " 管理员";
+        roleBadge.innerText = "🏠 " + (currentUser.clubName || currentUser.club) + " 管理员";
         clubBtns.style.display = 'block';
         adminPanel.style.display = 'block';
-        renderAdminTable(currentUser.clubName);
+        renderAdminTable(currentUser.clubName || currentUser.club);
     }
     else {
         roleBadge.innerText = "👤 会员";
         profilePanel.style.display = 'block';
         document.getElementById('profile-title').innerText = "我的档案";
-        prepareEditForm(currentUser.username);
+        prepareEditForm(currentUser.phone || currentUser.username);
     }
 }
 
 // ============================================
-// 4. 表格渲染 (带身份证列)
+// 5. 表格渲染 (带身份证列)
 // ============================================
 function renderAdminTable(filterClub) {
     const tbody = document.getElementById('member-list-body');
@@ -170,7 +221,7 @@ function getRoleTag(role) {
 }
 
 // ============================================
-// 5. 编辑与保存 (恢复查重逻辑)
+// 6. 编辑与保存 (恢复查重逻辑)
 // ============================================
 function editUser(phone) {
     document.getElementById('admin-panel').style.display = 'none';
@@ -195,7 +246,6 @@ function prepareEditForm(phone) {
     document.getElementById('p-password').value = '';
     document.getElementById('p-gender').value = profile.gender || '男';
     document.getElementById('p-club-select').value = profile.club || '莞-松湖俱乐部';
-    // 恢复身份证的读取
     document.getElementById('p-idcard').value = profile.idcard || ''; 
     document.getElementById('p-school').value = profile.school || '';
     document.getElementById('p-class').value = profile.gradeClass || '';
@@ -219,16 +269,14 @@ function saveProfileData() {
     const oldPhone = currentEditingPhone;
     const newPhone = document.getElementById('p-phone').value.trim();
     const newName = document.getElementById('p-name').value.trim();
-    const newID = document.getElementById('p-idcard').value.trim(); // 获取输入的身份证
+    const newID = document.getElementById('p-idcard').value.trim(); 
     const newPass = document.getElementById('p-password').value.trim();
     const newClub = document.getElementById('p-club-select').value;
     const role = document.getElementById('p-role').value;
 
     if (!newPhone || !newName) return alert("账号和姓名必填");
-    if (!newID) return alert("身份证号必须填写！"); // 必填校验
+    if (!newID) return alert("身份证号必须填写！"); 
 
-    // === 关键：后台编辑时的查重逻辑 ===
-    // 寻找数据库里有没有“不是我本人”，但是“身份证号和我一样”的人
     const duplicate = profileDatabase.find(p => p.idcard === newID && p.phone !== oldPhone);
     if (duplicate) {
         return alert(`错误：身份证号 ${newID} 已被成员【${duplicate.name}】使用！不能重复。`);
@@ -237,7 +285,7 @@ function saveProfileData() {
     const newProfile = {
         phone: newPhone, name: newName, role: role, gender: document.getElementById('p-gender').value,
         club: newClub, 
-        idcard: newID, // 保存身份证
+        idcard: newID, 
         school: document.getElementById('p-school').value, gradeClass: document.getElementById('p-class').value,
         parentWeChat: document.getElementById('p-wechat').value, photo: tempPhotoBase64
     };
@@ -279,8 +327,7 @@ function deleteBatch() {
     renderAdminTable(filter);
 }
 
-// ... (以下弹窗和辅助函数不变，不需要修改) ...
-// 弹窗功能
+// 辅助功能
 function openAddAdminModal() { document.getElementById('modal-add-admin').style.display = 'flex'; }
 function openTransferModal() { document.getElementById('modal-transfer').style.display = 'flex'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
@@ -294,7 +341,7 @@ function confirmAddAdmin() {
     if (!user || !pass || !name) return alert("信息不全");
     if (role === 'ultimate_admin') return alert("禁止创建终极管理员");
     userDatabase.push({ username: user, password: pass, role: role, displayName: name, clubName: club });
-    profileDatabase.push({ phone: user, name: name, role: role, club: club, photo: '', idcard: '' }); // 初始空身份证
+    profileDatabase.push({ phone: user, name: name, role: role, club: club, photo: '', idcard: '' });
     saveAllData();
     alert("新增成功");
     closeModal('modal-add-admin');
@@ -340,30 +387,32 @@ function exportSelected() {
     link.click();
     document.body.removeChild(link);
 }
-function logoutAction() { currentUser = null; location.reload(); }
-document.getElementById('login-password').addEventListener('keyup', (e)=>{if(e.key==='Enter') loginAction();});
+function logoutAction() { 
+    currentUser = null; 
+    localStorage.removeItem('currentUser'); // 登出清除状态
+    location.reload(); 
+}
+
 // ============================================
-// 6. 云端报名逻辑 (新增功能)
+// 7. 云端报名逻辑
 // ============================================
 async function handleJoin(event) {
-    event.preventDefault(); // 阻止页面刷新
+    event.preventDefault(); 
     const submitBtn = document.querySelector('.btn-submit');
     if(submitBtn) {
         submitBtn.innerText = "正在提交云端...";
         submitBtn.disabled = true;
     }
 
-    // 1. 获取输入值
     const nameInput = document.getElementById('j-name');
-    const genderInput = document.getElementById('j-gender'); // 假如您的HTML里没写id='j-gender'，这行可能取不到，请检查HTML
+    const genderInput = document.getElementById('j-gender');
     const idcardInput = document.getElementById('j-idcard');
     const cityInput = document.getElementById('j-city');
     const schoolInput = document.getElementById('j-school');
-    const classInput = document.getElementById('j-class'); // 注意HTML里是 j-class 还是 j-grade
+    const classInput = document.getElementById('j-class'); 
     const phoneInput = document.getElementById('j-phone');
     const wechatInput = document.getElementById('j-wechat');
 
-    // 防错检查：如果HTML里没找到这些元素，就直接报错
     if (!nameInput || !idcardInput || !phoneInput || !cityInput) {
         alert("页面元素缺失，请检查 HTML ID 是否正确");
         if(submitBtn) { submitBtn.innerText = "立即加入"; submitBtn.disabled = false; }
@@ -375,13 +424,11 @@ async function handleJoin(event) {
     const city = cityInput.value.trim();
     const pPhone = phoneInput.value.trim();
     
-    // 非必填项处理
     const gender = genderInput ? genderInput.value : "男";
     const school = schoolInput ? schoolInput.value.trim() : "";
     const gradeClass = classInput ? classInput.value.trim() : "";
     const pWechat = wechatInput ? wechatInput.value.trim() : "";
     
-    // 默认分配到松湖
     const clubName = "莞-松湖俱乐部"; 
 
     if (!name || !idcard || !pPhone || !city) {
@@ -391,7 +438,6 @@ async function handleJoin(event) {
     }
 
     try {
-        // --- A. 核心查重：身份证号必须全网唯一 ---
         const idQuery = new AV.Query('ClubMember');
         idQuery.equalTo('idcard', idcard);
         const count = await idQuery.count();
@@ -401,13 +447,11 @@ async function handleJoin(event) {
             return;
         }
 
-        // --- B. 家长账号处理 (一号多档案逻辑) ---
         const userQuery = new AV.Query('ClubUser');
         userQuery.equalTo('username', pPhone);
         const existingUsers = await userQuery.find();
 
         if (existingUsers.length === 0) {
-            // 新家长：注册账号
             const ClubUser = AV.Object.extend('ClubUser');
             const newUser = new ClubUser();
             newUser.set('username', pPhone);
@@ -417,7 +461,6 @@ async function handleJoin(event) {
             console.log("新家长账号创建成功");
         }
 
-        // --- C. 存入孩子档案 ---
         const ClubMember = AV.Object.extend('ClubMember');
         const newMember = new ClubMember();
         newMember.set('name', name);
@@ -434,7 +477,6 @@ async function handleJoin(event) {
 
         await newMember.save();
 
-        // --- D. 成功收尾 ---
         alert(`🎉 报名成功！\n\n您的账号是：${pPhone}\n您的密码是：${pPhone.substring(pPhone.length - 4)}\n\n请前往登录页查看档案。`);
         window.location.href = "login.html";
 
@@ -443,4 +485,14 @@ async function handleJoin(event) {
         alert("提交失败：" + error.message);
         if(submitBtn) { submitBtn.innerText = "立即加入"; submitBtn.disabled = false; }
     }
+}
+
+// ============================================
+// 8. 全局回车键监听 (只留这一份)
+// ============================================
+const passInput = document.getElementById('login-password');
+if (passInput) {
+    passInput.addEventListener('keyup', function(e) {
+        if (e.key === 'Enter') handleCloudLogin();
+    });
 }
