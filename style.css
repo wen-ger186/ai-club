@@ -29,6 +29,13 @@ ul { list-style: none; }
 .nav-menu { display: flex; align-items: center; gap: 2rem; }
 .nav-links a { font-weight: 600; color: var(--text-main); margin: 0 10px; }
 .nav-links a:hover { color: var(--primary-blue); }
+/* 新增 Logo 图片样式 */
+.logo-img {
+    height: 40px;       /* 高度设为 40 像素 */
+    width: auto;        /* 宽度自动保持比例 */
+    margin-right: 10px; /* 和右边的文字保持一点距离 */
+    vertical-align: middle; /* 保证和文字垂直居中 */
+}
 
 /* 按钮组 */
 .btn-login { 
