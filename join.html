@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI CLUB 报名表</title>
+    <script src="//code.bdstatic.com/npm/leancloud-storage@4.12.0/dist/av-min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background-color: #f3f4f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px 0; }
+        .join-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); width: 100%; max-width: 500px; }
+        .form-header { text-align: center; margin-bottom: 30px; }
+        .form-header h2 { color: #2563EB; margin-bottom: 10px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #374151; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        .btn-submit { width: 100%; padding: 15px; background-color: #2563EB; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: background 0.3s; }
+        .btn-submit:hover { background-color: #1d4ed8; }
+        .preview-img { width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 2px solid #eee; display: none; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="join-container">
+    <div class="form-header">
+        <h2>🚀 加入我们</h2>
+        <p>填写信息，开启 AI 之旅</p>
+    </div>
+
+    <form id="join-form" onsubmit="handleJoin(event)">
+        <div class="form-group">
+            <label>学员姓名 (中文) *</label>
+            <input type="text" id="j-name" required placeholder="例如：张小明">
+        </div>
+
+        <div class="form-group">
+            <label>性别</label>
+            <select id="j-gender">
+                <option value="男">男</option>
+                <option value="女">女</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>身份证号 (唯一标识) *</label>
+            <input type="text" id="j-idcard" required placeholder="请输入学员身份证号" maxlength="18">
+        </div>
+
+        <div class="form-group">
+            <label>就读学校 *</label>
+            <input type="text" id="j-school" required placeholder="例如：松山湖实验小学">
+        </div>
+
+        <div class="form-group">
+            <label>就读班级 *</label>
+            <input type="text" id="j-class" required placeholder="例如：三年2班">
+        </div>
+
+        <div class="form-group">
+            <label>家长手机号 (将作为登录账号) *</label>
+            <input type="tel" id="j-phone" required placeholder="请输入11位手机号" maxlength="11">
+        </div>
+
+        <div class="form-group">
+            <label>家长微信号 *</label>
+            <input type="text" id="j-wechat" required placeholder="用于接收上课通知">
+        </div>
+
+        <div class="form-group">
+            <label>📸 上传照片 (可选)</label>
+            <input type="file" id="j-photo" accept="image/*" onchange="previewFile()">
+            <img id="img-preview" class="preview-img" alt="预览">
+            <input type="hidden" id="base64-photo">
+        </div>
+
+        <button type="submit" class="btn-submit">立即报名</button>
+        <p style="text-align:center; margin-top:15px; font-size:14px;">
+            已有账号？ <a href="login.html" style="color:#2563EB;">去登录</a>
+        </p>
+    </form>
+</div>
+
+<script>
+    function previewFile() {
+        const file = document.getElementById('j-photo').files[0];
+        const preview = document.getElementById('img-preview');
+        const hiddenInput = document.getElementById('base64-photo');
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) return alert("照片太大，请上传 2MB 以内的照片");
+            const reader = new FileReader();
+            reader.onloadend = function () {
+                preview.src = reader.result;
+                preview.style.display = "block";
+                hiddenInput.value = reader.result;
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function handleJoin(e) {
+        e.preventDefault(); 
+
+        const name = document.getElementById('j-name').value.trim();
+        const gender = document.getElementById('j-gender').value;
+        const idcard = document.getElementById('j-idcard').value.trim(); // 获取身份证
+        const school = document.getElementById('j-school').value.trim();
+        const gradeClass = document.getElementById('j-class').value.trim();
+        const phone = document.getElementById('j-phone').value.trim();
+        const wechat = document.getElementById('j-wechat').value.trim();
+        const photo = document.getElementById('base64-photo').value;
+
+        if(!name || !phone || !school || !idcard) return alert("请填写完整信息，包括身份证号");
+
+        // 使用 v10 数据库
+        let userDB = JSON.parse(localStorage.getItem('db_users_v10')) || [];
+        let profileDB = JSON.parse(localStorage.getItem('db_profiles_v10')) || [];
+
+        // 1. 查手机号重复
+        if (userDB.find(u => u.username === phone)) {
+            alert("该手机号已注册，请直接登录");
+            window.location.href = "login.html";
+            return;
+        }
+
+        // 2. 核心恢复：查身份证重复
+        const duplicateID = profileDB.find(p => p.idcard === idcard);
+        if (duplicateID) {
+            alert(`报名失败！\n身份证号【${idcard}】\n已被学员【${duplicateID.name}】使用。\n系统禁止重复报名。`);
+            return;
+        }
+
+        userDB.push({
+            username: phone,
+            password: phone.slice(-4) || "123456",
+            role: 'member',
+            displayName: name
+        });
+
+        profileDB.push({
+            phone: phone,
+            name: name,
+            role: 'member',
+            gender: gender,
+            club: '待分配',
+            idcard: idcard, // 存入
+            school: school,
+            gradeClass: gradeClass,
+            parentWeChat: wechat,
+            photo: photo
+        });
+
+        localStorage.setItem('db_users_v10', JSON.stringify(userDB));
+        localStorage.setItem('db_profiles_v10', JSON.stringify(profileDB));
+
+        alert(`🎉 报名成功！\n\n您的账号是：${phone}\n密码是：${phone.slice(-4)}\n点击确定跳转登录...`);
+        window.location.href = "login.html";
+    }
+</script>
+
+</body>
+</html>
