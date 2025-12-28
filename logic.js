@@ -157,7 +157,7 @@ function applyRoleUI(){
   var roleTypeSelect=document.getElementById('admin-role-type');
   if(roleTypeSelect){
     if(lv===3){
-      roleTypeSelect.innerHTML='<option value="">-- 请选择管理员类型 --</option><option value="2">平台管理员 (负责多店)</option><option value="1">俱乐部管理员 (单店店长)</option>';
+      roleTypeSelect.innerHTML='<option value="">-- 请选择管理员类型 --</option><option value="2">平台管理员 (新增 L2)</option><option value="1">俱乐部管理员 (新增 L1)</option>';
       roleTypeSelect.disabled=false;
       roleTypeSelect.style.border='2px solid #2563eb';
       roleTypeSelect.style.background='#f0f5ff';
@@ -381,7 +381,7 @@ function loadAdmins(){
     list.forEach(function(u){
       var tr=document.createElement('tr');
       var rl=u.get('roleLevel');var rlText=rl===3?'超级管理员':(rl===2?'平台管理员':'俱乐部管理员');
-      var ops='<button class="btn-xs" onclick="editAdmin(\''+u.id+'\')">修改</button> '+(getRoleLevel(getCurrentRole())===3?'<button class="btn-xs" onclick="deleteAdmin(\''+u.id+'\')">删除</button>':'')+'';
+      var ops=''; // 彻底移除修改和删除按钮
       tr.innerHTML='<td>'+((u.get('displayName'))||'')+'</td><td>'+((u.get('username'))||'')+'</td><td>'+rlText+'</td><td>'+((u.get('club'))||'')+'</td><td>'+ops+'</td>';
       body.appendChild(tr);
     })
