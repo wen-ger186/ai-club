@@ -217,5 +217,75 @@
     </div>
     
     <script src="logic.js"></script>
+    <script>
+        // 初始化 LeanCloud
+        var APP_ID = (window.LC_CONFIG && window.LC_CONFIG.APP_ID) || "H5n4qmS6PtlQ622uTrphucD9-MdYXbMMI";
+        var APP_KEY = (window.LC_CONFIG && window.LC_CONFIG.APP_KEY) || "WIqoGPzreBxRfzrMPAudP4ll";
+        var SERVER_URL = (window.LC_CONFIG && window.LC_CONFIG.SERVER_URL) || "https://h5n4qms6.api.lncldglobal.com";
+        AV.init({ appId: APP_ID, appKey: APP_KEY, serverURL: SERVER_URL });
+
+        function handleJoin(event) {
+            event.preventDefault();
+            
+            // 获取表单数据
+            var name = document.getElementById('j-name').value.trim();
+            var gender = document.getElementById('j-gender').value;
+            var idcard = document.getElementById('j-idcard').value.trim();
+            var school = document.getElementById('j-school').value.trim();
+            var className = document.getElementById('j-class').value.trim();
+            var club = document.getElementById('j-club').value;
+            var phone = document.getElementById('j-phone').value.trim();
+            var wechat = document.getElementById('j-wechat').value.trim();
+            var photoFile = document.getElementById('j-photo').files[0];
+            
+            // 验证必填字段
+            if (!name || !gender || !idcard || !school || !className || !club || !phone || !wechat) {
+                alert('请填写所有必填字段');
+                return;
+            }
+            
+            // 创建会员对象
+            var Member = AV.Object.extend('Member');
+            var member = new Member();
+            
+            // 设置会员信息
+            member.set('name', name);
+            member.set('gender', gender);
+            member.set('idcard', idcard);
+            member.set('school', school);
+            member.set('className', className);
+            member.set('club', club);
+            member.set('parentPhone', phone);
+            member.set('parentWechat', wechat);
+            member.set('status', 'active');
+            member.set('joinDate', new Date());
+            
+            // 如果有照片，上传照片
+            if (photoFile) {
+                var avFile = new AV.File(photoFile.name, photoFile);
+                member.set('photo', avFile);
+            }
+            
+            // 保存到 LeanCloud
+            member.save().then(function() {
+                alert('注册成功！您的信息已提交，工作人员会尽快与您联系。');
+                // 清空表单
+                document.getElementById('j-name').value = '';
+                document.getElementById('j-gender').value = '';
+                document.getElementById('j-idcard').value = '';
+                document.getElementById('j-school').value = '';
+                document.getElementById('j-class').value = '';
+                document.getElementById('j-club').value = '';
+                document.getElementById('j-phone').value = '';
+                document.getElementById('j-wechat').value = '';
+                document.getElementById('j-photo').value = '';
+            }).catch(function(error) {
+                alert('注册失败：' + error.message);
+            });
+        }
+        
+        // 绑定表单提交事件
+        document.querySelector('.join-form').addEventListener('submit', handleJoin);
+    </script>
 </body>
 </html>

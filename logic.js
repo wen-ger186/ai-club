@@ -75,13 +75,52 @@ var selectedIds=new Set();
 var editingMemberId=null;
 
 document.addEventListener('DOMContentLoaded',function(){
-  var saved=localStorage.getItem('currentUser');
+  // 强制核对 LeanCloud 会话，清理旧数据冲突
+  var leanCloudUser = AV.User.current();
+  var savedLocalUser = localStorage.getItem('currentUser');
+  
+  if (leanCloudUser) {
+    // 有 LeanCloud 用户：以 LeanCloud 为准，忽略/覆盖本地旧数据
+    var userData = {
+      id: leanCloudUser.id,
+      username: leanCloudUser.getUsername(),
+      name: leanCloudUser.get('displayName') || leanCloudUser.getUsername(),
+      role: leanCloudUser.get('roleLevel') >= 2 ? 'platform_admin' : (leanCloudUser.get('roleLevel') === 1 ? 'club_admin' : 'member'),
+      roleLevel: leanCloudUser.get('roleLevel') || 0,
+      clubName: leanCloudUser.get('club') || ''
+    };
+    
+    // 更新本地存储
+    localStorage.setItem('currentUser', JSON.stringify(userData));
+    currentUser = userData;
+    
+  } else if (savedLocalUser) {
+    // 没有 LeanCloud 用户但有本地数据：清理所有旧缓存
+    console.log('检测到旧版本地数据，执行数据清洗...');
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('members');
+    localStorage.removeItem('clubs');
+    localStorage.removeItem('admins');
+    // 清理其他可能的旧数据键
+    Object.keys(localStorage).forEach(function(key) {
+      if (key.includes('member') || key.includes('club') || key.includes('admin') || key.includes('user')) {
+        localStorage.removeItem(key);
+      }
+    });
+    
+    currentUser = null;
+    alert('检测到旧版数据，已自动清理。请重新登录。');
+    if (window.isDashboardPage) {
+      window.location.href = 'login.html';
+      return;
+    }
+  }
+  
   if(window.isDashboardPage){
-    if(!saved){alert("请先登录");window.location.href="login.html";return}
-    currentUser=JSON.parse(saved);
+    if(!currentUser){alert("请先登录");window.location.href="login.html";return}
     initDashboard();
   }else{
-    if(saved){currentUser=JSON.parse(saved);updateNavbarState(true)}else{updateNavbarState(false)}
+    if(currentUser){updateNavbarState(true)}else{updateNavbarState(false)}
     initHamburger();initBanner();
   }
 });
