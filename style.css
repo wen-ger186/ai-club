@@ -1,0 +1,152 @@
+/* =========================================
+   AI Club 全局样式表 - 2025 精装修版
+   ========================================= */
+
+/* --- 1. 全局变量与重置 --- */
+:root {
+    --primary-blue: #2563EB;   /* 科技蓝 */
+    --primary-dark: #1E40AF;   /* 深蓝 */
+    --accent-orange: #F59E0B;  /* 活力橙 */
+    --text-main: #1F2937;      /*以此为准的黑 */
+    --text-light: #6B7280;     /* 辅助灰 */
+    --bg-light: #F3F4F6;       /* 浅灰背景 */
+    --white: #ffffff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+body { line-height: 1.6; color: var(--text-main); background-color: #f9fafb; }
+a { text-decoration: none; color: inherit; transition: 0.3s; }
+ul { list-style: none; }
+
+/* --- 2. 导航栏 (Navbar) --- */
+.navbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1rem 5%; background: rgba(255,255,255,0.95);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(10px);
+}
+.logo-text { font-size: 1.6rem; font-weight: 900; color: var(--primary-blue); letter-spacing: -1px; }
+.nav-menu { display: flex; align-items: center; gap: 2rem; }
+.nav-links a { font-weight: 600; color: var(--text-main); margin: 0 10px; }
+.nav-links a:hover { color: var(--primary-blue); }
+/* 新增 Logo 图片样式 */
+.logo-img {
+    height: 40px;       /* 高度设为 40 像素 */
+    width: auto;        /* 宽度自动保持比例 */
+    margin-right: 10px; /* 和右边的文字保持一点距离 */
+    vertical-align: middle; /* 保证和文字垂直居中 */
+}
+.hamburger { display: none; cursor: pointer; }
+.bar { display: block; width: 24px; height: 3px; margin: 5px auto; background-color: var(--text-main); transition: all 0.3s ease; }
+
+/* 按钮组 */
+.btn-login { 
+    padding: 0.5rem 1.2rem; border: 1px solid var(--primary-blue); 
+    color: var(--primary-blue); border-radius: 6px; font-weight: bold; 
+}
+.btn-login:hover { background: #eff6ff; }
+.btn-join { 
+    padding: 0.5rem 1.2rem; background: var(--accent-orange); 
+    color: white; border-radius: 6px; font-weight: bold; box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);
+}
+.btn-join:hover { background: #d97706; transform: translateY(-2px); }
+
+/* --- 3. Hero 头部 (大改) --- */
+.hero {
+    height: 600px;
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); /* 漂亮的蓝渐变 */
+    color: white;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center; padding: 0 20px;
+    position: relative; overflow: hidden;
+}
+/* 加点背景纹理装饰 */
+.hero::after {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background-image: radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px);
+    background-size: 30px 30px; opacity: 0.5; pointer-events: none;
+}
+.hero h1 { font-size: 3.5rem; margin-bottom: 0.5rem; text-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 1;}
+.hero-sub { font-size: 2rem; color: var(--accent-orange); font-weight: 800; margin-bottom: 1.5rem; z-index: 1; }
+.hero-desc { font-size: 1.2rem; opacity: 0.9; max-width: 700px; margin-bottom: 2.5rem; z-index: 1; }
+.hero-btn {
+    padding: 1rem 3rem; font-size: 1.3rem; background: var(--accent-orange); color: white;
+    border-radius: 50px; font-weight: bold; box-shadow: 0 10px 20px rgba(245, 158, 11, 0.4); z-index: 1;
+}
+.hero-btn:hover { transform: scale(1.05); background: #f59e0b; }
+
+/* --- 3.5 Banner 轮播 --- */
+.banner { position: relative; overflow: hidden; background: #fff; }
+.banner-track { display: flex; width: 400%; transition: transform 0.5s ease; }
+.slide { min-width: 100%; display: flex; align-items: center; justify-content: center; padding: 3rem 10%; }
+.slide-inner { text-align: center; }
+.slide h2 { font-size: 2rem; color: var(--primary-blue); margin-bottom: 0.5rem; }
+.slide p { color: var(--text-light); font-size: 1.1rem; }
+.banner-controls { position: absolute; top: 50%; left: 0; right: 0; display: flex; justify-content: space-between; transform: translateY(-50%); padding: 0 1rem; pointer-events: none; }
+.banner-controls button { pointer-events: auto; background: rgba(0,0,0,0.4); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 20px; cursor: pointer; }
+.banner-dots { display: flex; justify-content: center; gap: 8px; padding: 12px 0; }
+.banner-dots .dot { width: 10px; height: 10px; border-radius: 50%; background: #e5e7eb; border: none; cursor: pointer; }
+.banner-dots .dot.active { background: var(--primary-blue); }
+
+/* --- 4. 核心通用版块 --- */
+.section { padding: 5rem 10%; }
+.section-title { text-align: center; font-size: 2.2rem; margin-bottom: 3rem; color: var(--text-main); position: relative; }
+/* 标题下的小横线 */
+.section-title::after { 
+    content: ''; display: block; width: 60px; height: 4px; background: var(--primary-blue); 
+    margin: 10px auto 0; border-radius: 2px;
+}
+
+/* --- 5. 新闻风采版块 (News Grid) --- */
+.news-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; }
+.news-card {
+    background: white; border-radius: 12px; overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease; border: 1px solid #f3f4f6;
+}
+.news-card:hover { transform: translateY(-8px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+.news-img-box { height: 200px; background: #e5e7eb; position: relative; overflow: hidden; }
+.news-img-box img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
+.news-card:hover .news-img-box img { transform: scale(1.1); }
+.news-content { padding: 1.5rem; }
+.news-tag { 
+    background: #eff6ff; color: var(--primary-blue); padding: 4px 8px; 
+    border-radius: 4px; font-size: 0.8rem; font-weight: bold; display: inline-block; margin-bottom: 10px;
+}
+.news-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; line-height: 1.4; }
+.news-desc { font-size: 0.95rem; color: var(--text-light); margin-bottom: 15px; }
+.news-link { color: var(--primary-blue); font-weight: bold; font-size: 0.9rem; }
+
+/* --- 6. 课程卡片 (Feature Cards) --- */
+.cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 2rem; }
+.card {
+    background: white; padding: 2.5rem 2rem; border-radius: 16px; text-align: center;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); transition: 0.3s; border: 1px solid #eee;
+}
+.card:hover { transform: translateY(-5px); border-color: var(--primary-blue); }
+.card h3 { font-size: 1.4rem; margin: 1rem 0; color: var(--text-main); }
+.card p { color: var(--text-light); font-size: 1rem; }
+.card-icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+
+/* --- 7. 分部入口 --- */
+.club-network { background: #fff; text-align: center; border-radius: 16px; margin: 3rem 10%; padding: 4rem; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+.club-btn {
+    display: inline-block; padding: 1rem 2.5rem; background: var(--primary-blue); color: white;
+    border-radius: 50px; font-weight: bold; margin-top: 1.5rem;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+}
+
+/* --- 8. 工具类 --- */
+.hidden { display: none !important; }
+
+/* --- 9. 移动端适配 --- */
+@media (max-width: 768px) {
+    .navbar { flex-direction: column; gap: 1rem; padding: 1rem; }
+    .hamburger { display: block; align-self: flex-end; position: absolute; right: 5%; top: 16px; }
+    .nav-menu { position: fixed; left: -100%; top: 64px; gap: 0; flex-direction: column; background-color: #fff; width: 100%; text-align: center; transition: 0.3s; box-shadow: 0 10px 10px rgba(0,0,0,0.1); padding-bottom: 16px; }
+    .nav-menu.active { left: 0; }
+    .nav-links { flex-direction: column; margin: 16px 0; gap: 1rem; }
+    .hero h1 { font-size: 2rem; }
+    .hero-sub { font-size: 1.5rem; }
+    .section { padding: 3rem 5%; }
+}

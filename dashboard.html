@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理控制台 - ai-club.fun</title>
+    <script src="//code.bdstatic.com/npm/leancloud-storage@4.12.0/dist/av-min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background-color: #f3f4f6; } /* 后台灰色背景 */
+        .dashboard-container { max-width: 1200px; margin: 30px auto; background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .admin-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+        .hidden { display: none !important; }
+        .btn-xs { padding: 2px 8px; font-size: 0.8rem; border-radius: 4px; border: 1px solid #ccc; cursor: pointer; }
+        /* 继承 style.css 的基础样式，此处只补漏 */
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
+        th { background: #f9fafb; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        .modal-box { background: white; padding: 30px; border-radius: 8px; width: 450px; }
+        .read-only { background-color: #f3f4f6; color: #888; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <div class="admin-nav">
+            <a href="index.html" style="text-decoration:none; color:#666;">&larr; 返回前台首页</a>
+            <div>
+                <span id="user-display-name" style="font-weight:bold; margin-right:10px;">管理员</span>
+                <button onclick="logoutAction()" style="color:red; border:1px solid red; background:white; padding:4px 10px; cursor:pointer;">退出系统</button>
+            </div>
+        </div>
+
+        <h2 style="border-left:5px solid #2563EB; padding-left:15px; margin-bottom:10px;">控制台</h2>
+        <div id="identity-role" style="display:inline-block; padding:5px 10px; background:#e0f2fe; color:#0284c7; font-weight:bold; border-radius:4px; margin-bottom:20px;">加载中...</div>
+
+        <div id="top-admin-tools" style="display:none; background:#f0f5ff; padding:20px; border-radius:8px; margin-bottom:30px; border:1px dashed #1890ff;">
+            <h4 style="margin:0 0 15px 0; color:#1890ff;">🛡️ 平台管理操作</h4>
+            <div style="display:flex; gap:10px;">
+                <button onclick="openAddAdminModal()">+ 开分店/任命管理员</button>
+                <button onclick="openTransferModal()">⇌ 会员分配/转会</button>
+                <button id="btn-batch-delete" onclick="deleteBatch()" style="color:white; background:red; border:none; display:none;">🗑 批量删除</button>
+            </div>
+        </div>
+        
+        <div id="admin-panel" style="display:none;">
+            <div style="margin-bottom:15px; display:flex; justify-content:space-between;">
+                <h3>📂 档案数据库</h3>
+                <button onclick="exportSelected()">📥 导出报表</button>
+            </div>
+            <div style="overflow-x:auto;">
+                <table id="member-table">
+                    <thead>
+                        <tr>
+                            <th width="30"><input type="checkbox" id="select-all" onclick="toggleSelectAll()"></th>
+                            <th width="50">头像</th>
+                            <th width="60">操作</th>
+                            <th>姓名</th>
+                            <th>状态/俱乐部</th>
+                            <th>性别</th>
+                            <th>手机号</th>
+                            <th>学校</th>
+                        </tr>
+                    </thead>
+                    <tbody id="member-list-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="profile-panel" style="display:none; max-width:600px; margin:0 auto;">
+            <h3 style="text-align:center;">档案详情</h3>
+            <div style="text-align:center; margin-bottom:20px;">
+                <img id="p-photo-preview" src="" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid #eee;">
+                <br>
+                <label for="p-photo-file" style="cursor:pointer; color:#2563EB; display:inline-block; margin-top:5px;">📸 更换照片</label>
+                <input type="file" id="p-photo-file" accept="image/*" onchange="previewImage(this)" style="display:none;">
+            </div>
+
+            <p>姓名: <input type="text" id="p-name" style="width:100%; padding:8px; margin-bottom:10px;"></p>
+            <p>性别: <select id="p-gender" style="width:100%; padding:8px; margin-bottom:10px;"><option value="男">男</option><option value="女">女</option></select></p>
+            <p>手机: <input type="text" id="p-phone" style="width:100%; padding:8px; margin-bottom:10px;"></p>
+            <p>俱乐部 (转会): 
+                <select id="p-club-select" style="width:100%; padding:8px; margin-bottom:10px;">
+                    <option value="待分配">待分配</option>
+                    <option value="莞-松湖俱乐部">莞-松湖俱乐部</option>
+                    <option value="莞-南城俱乐部">莞-南城俱乐部</option>
+                    <option value="莞-虎门俱乐部">莞-虎门俱乐部</option>
+                </select>
+            </p>
+            <p>身份证: <input type="text" id="p-idcard" style="width:100%; padding:8px; margin-bottom:10px;"></p>
+            <p>学校: <input type="text" id="p-school" style="width:100%; padding:8px; margin-bottom:10px;"></p>
+            <p>班级: <input type="text" id="p-class" style="width:100%; padding:8px; margin-bottom:10px;"></p>
+            <p>微信: <input type="text" id="p-wechat" style="width:100%; padding:8px; margin-bottom:10px;"></p>
+            
+            <div style="text-align:center; margin-top:20px;">
+                <button onclick="saveProfileData()" style="padding:10px 30px; background:#2563EB; color:white; border:none; border-radius:4px;">保存</button>
+                <button onclick="closeDetailView()" style="padding:10px 30px; background:#eee; border:none; margin-left:10px; border-radius:4px;">返回</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-add-admin" class="modal-overlay hidden">
+        <div class="modal-box">
+            <h3>开分店 / 任命管理员</h3>
+            <p>账号: <input type="text" id="new-admin-user" style="width:100%; margin-bottom:10px;"></p>
+            <p>密码: <input type="text" id="new-admin-pass" value="123456" style="width:100%; margin-bottom:10px;"></p>
+            <p>姓名: <input type="text" id="new-admin-name" style="width:100%; margin-bottom:10px;"></p>
+            <p>角色: <select id="new-admin-role" style="width:100%; margin-bottom:10px;"></select></p>
+            <p>负责店名: <input type="text" id="new-admin-club" placeholder="如：莞-厚街俱乐部" style="width:100%; margin-bottom:10px;"></p>
+            <button onclick="confirmAddAdmin()">确认</button> <button onclick="closeModal('modal-add-admin')">取消</button>
+        </div>
+    </div>
+
+    <div id="modal-transfer" class="modal-overlay hidden">
+        <div class="modal-box">
+            <h3>会员分配 / 转会</h3>
+            <p>目标俱乐部: <input type="text" placeholder="输入店名" style="width:100%; margin-bottom:10px;"></p>
+            <button onclick="confirmTransfer()">确认</button> <button onclick="closeModal('modal-transfer')">取消</button>
+        </div>
+    </div>
+
+    <script>window.isDashboardPage = true;</script>
+    <script src="logic.js"></script>
+</body>
+</html>

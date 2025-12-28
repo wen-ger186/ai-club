@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>俱乐部高级全权管理系统</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: linear-gradient(135deg, #1e3a8a, #3b82f6); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .login-wrapper { display: grid; grid-template-columns: 1.1fr 1fr; max-width: 960px; width: 100%; background: #fff; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); overflow: hidden; }
+        .login-brand { background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.2), transparent 40%), linear-gradient(120deg, #1e40af, #2563eb); color: #fff; padding: 40px; display: flex; flex-direction: column; justify-content: center; }
+        .brand-top { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+        .brand-top img { height: 40px; }
+        .brand-title { font-size: 28px; font-weight: 800; }
+        .brand-sub { font-size: 16px; opacity: 0.9; margin-top: 4px; }
+        .brand-points { margin-top: 24px; display: grid; gap: 10px; }
+        .brand-point { display: flex; align-items: center; gap: 8px; font-size: 14px; opacity: 0.95; }
+        .login-form { padding: 40px; }
+        .form-title { font-size: 22px; font-weight: 700; margin-bottom: 16px; color: #111827; }
+        .form-group { margin-bottom: 16px; }
+        .input-row { position: relative; }
+        .input-row input { width: 100%; padding: 12px 40px 12px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; }
+        .input-row .toggle-pass { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #6b7280; }
+        .options-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+        .options-row a { color: #2563eb; font-size: 13px; }
+        .btn-primary { width: 100%; padding: 12px; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
+        .links { display: flex; justify-content: space-between; margin-top: 12px; font-size: 13px; }
+        .error-text { display: none; color: #ef4444; font-size: 13px; margin-top: 8px; }
+        @media (max-width: 900px) { .login-wrapper { grid-template-columns: 1fr; } .login-brand { padding: 28px; } .login-form { padding: 28px; } }
+    </style>
+</head>
+<script src="//code.bdstatic.com/npm/leancloud-storage@4.12.0/dist/av-min.js"></script>
+<body>
+
+    <div class="login-wrapper" id="login-section">
+        <div class="login-brand">
+            <div class="brand-top">
+                <img src="logo.png" alt="logo">
+                <div>
+                    <div class="brand-title">ai-club.fun</div>
+                    <div class="brand-sub">青少年朋友的“科创街超”</div>
+                </div>
+            </div>
+            <div class="brand-points">
+                <div class="brand-point">💻 编程闯关</div>
+                <div class="brand-point">🚁 无人机穿越</div>
+                <div class="brand-point">⚔️ 格斗机器人</div>
+                <div class="brand-point">🧱 结构机器人拼装</div>
+            </div>
+        </div>
+        <div class="login-form">
+            <div class="form-title">系统登录</div>
+            <div class="form-group">
+                <div class="input-row">
+                    <input type="text" id="login-username" placeholder="账号（家长手机号或管理员账号）">
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="input-row">
+                    <input type="password" id="login-password" placeholder="密码">
+                    <span class="toggle-pass" id="toggle-pass">显示</span>
+                </div>
+            </div>
+            <div class="options-row">
+                <label><input type="checkbox" id="remember-me"> 记住账号</label>
+                <a href="join.html">没有账号？去注册</a>
+            </div>
+            <button id="btn-login" class="btn-primary" onclick="handleCloudLogin()">登录</button>
+            <p class="error-text" id="login-error">账号或密码错误</p>
+            <div class="links">
+                <a href="index.html">返回首页</a>
+                <a href="clubs/songshan.html">进入分部</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container dashboard-container" id="dashboard-section" style="display: none;">
+        
+        <div class="header-row">
+            <div>
+                <h2 id="user-display-name" class="main-title" style="margin-bottom:5px;">欢迎</h2>
+                <div class="identity-badge" id="identity-role"></div>
+            </div>
+            <div>
+                <button onclick="logoutAction()" class="btn-logout small-btn">退出系统</button>
+            </div>
+        </div>
+
+        <div id="top-admin-tools" style="display:none; background:#f0f5ff; padding:15px; border-radius:8px; margin-bottom:20px; border:1px dashed #1890ff;">
+            <h4 id="admin-tools-title" style="margin:0 0 10px 0; color:#1890ff;">🛡️ 管理控制台</h4>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button onclick="openAddAdminModal()" class="btn-secondary small-btn" style="width:auto;">+ 新增管理员</button>
+                <button onclick="openTransferModal()" class="btn-warning small-btn" style="width:auto;">⇌ 会员转会(批量)</button>
+                <button onclick="deleteBatch()" class="btn-danger small-btn" style="width:auto;">🗑 批量删除选中</button>
+            </div>
+        </div>
+        
+        <div id="admin-panel" style="display:none;">
+            <div class="panel-header">
+                <h3>档案数据库</h3>
+                <div id="club-admin-btns" style="display:none;">
+                    <button onclick="deleteBatch()" class="btn-danger small-btn" style="width:auto; margin-right:10px;">🗑 批量删除选中</button>
+                </div>
+                <button onclick="exportSelected()" class="btn-export">📥 导出报表</button>
+            </div>
+            
+            <div class="table-wrapper">
+                <table id="member-table">
+                    <thead>
+                        <tr>
+                            <th width="30"><input type="checkbox" id="select-all" onclick="toggleSelectAll()"></th>
+                            <th width="60">照片</th>
+                            <th width="80">操作</th>
+                            <th>姓名</th>
+                            <th>身份角色</th>
+                            <th>性别</th>
+                            <th>手机号/账号</th>
+                            <th>所属俱乐部</th>
+                            <th>身份证号</th> <th>就读学校</th>
+                            <th>班级</th>
+                            <th>家长微信号</th>
+                        </tr>
+                    </thead>
+                    <tbody id="member-list-body">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="profile-panel" class="profile-card" style="display:none;">
+            <div class="panel-header">
+                <h3 id="profile-title">档案详情</h3>
+                <button onclick="closeDetailView()" class="btn-secondary small-btn" style="width:auto;">返回列表</button>
+            </div>
+
+            <div class="profile-layout">
+                <div class="photo-section">
+                    <div class="photo-preview-box">
+                        <img id="p-photo-preview" src="" alt="暂无照片">
+                    </div>
+                    <div id="photo-upload-controls">
+                        <label for="p-photo-file" class="btn-upload">📸 上传/更换照片</label>
+                        <input type="file" id="p-photo-file" accept="image/*" onchange="previewImage(this)" style="display:none;">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>姓名</label>
+                        <input type="text" id="p-name">
+                    </div>
+                    <div class="form-group">
+                        <label>性别</label>
+                        <select id="p-gender">
+                            <option value="男">男</option>
+                            <option value="女">女</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>手机号/账号</label>
+                        <input type="text" id="p-phone">
+                    </div>
+                    <div class="form-group">
+                        <label>登录密码 (为空则不修改)</label>
+                        <input type="text" id="p-password">
+                    </div>
+                    <div class="form-group">
+                        <label>所属俱乐部</label>
+                        <select id="p-club-select">
+                            <option value="莞-松湖俱乐部">莞-松湖俱乐部</option>
+                            <option value="莞-南城俱乐部">莞-南城俱乐部</option>
+                            <option value="莞-虎门俱乐部">莞-虎门俱乐部</option>
+                            <option value="莞-东城俱乐部">莞-东城俱乐部</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>身份证号 (唯一)</label>
+                        <input type="text" id="p-idcard">
+                    </div>
+                    <div class="form-group">
+                        <label>就读学校</label>
+                        <input type="text" id="p-school">
+                    </div>
+                    <div class="form-group">
+                        <label>班级</label>
+                        <input type="text" id="p-class">
+                    </div>
+                    <div class="form-group">
+                        <label>家长微信号</label>
+                        <input type="text" id="p-wechat">
+                    </div>
+                    <input type="hidden" id="p-role">
+                </div>
+            </div>
+
+            <div class="action-buttons" style="margin-top:20px; text-align:center;">
+                <button onclick="saveProfileData()" class="btn-save">💾 保存修改</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-add-admin" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <h3>新增管理员</h3>
+            <div class="form-group">
+                <label>账号</label>
+                <input type="text" id="new-admin-user">
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <input type="text" id="new-admin-pass" value="123456">
+            </div>
+            <div class="form-group">
+                <label>显示名称</label>
+                <input type="text" id="new-admin-name">
+            </div>
+            <div class="form-group">
+                <label>角色类型</label>
+                <select id="new-admin-role" onchange="toggleClubSelect(this.value)">
+                    <option value="club_admin">俱乐部管理员</option>
+                    <option value="super_admin">超级管理员</option>
+                </select>
+            </div>
+            <div class="form-group" id="div-new-admin-club">
+                <label>负责俱乐部</label>
+                <select id="new-admin-club">
+                    <option value="莞-松湖俱乐部">莞-松湖俱乐部</option>
+                    <option value="莞-南城俱乐部">莞-南城俱乐部</option>
+                    <option value="莞-虎门俱乐部">莞-虎门俱乐部</option>
+                </select>
+            </div>
+            <div class="modal-btns">
+                <button onclick="confirmAddAdmin()" class="btn-save">确认</button>
+                <button onclick="closeModal('modal-add-admin')" class="btn-secondary">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-transfer" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <h3>会员批量转会</h3>
+            <p>已选 <span id="transfer-count" style="color:red;font-weight:bold;">0</span> 人</p>
+            <div class="form-group">
+                <label>转入目标：</label>
+                <select id="transfer-target-club">
+                    <option value="莞-松湖俱乐部">莞-松湖俱乐部</option>
+                    <option value="莞-南城俱乐部">莞-南城俱乐部</option>
+                    <option value="莞-虎门俱乐部">莞-虎门俱乐部</option>
+                    <option value="莞-东城俱乐部">莞-东城俱乐部</option>
+                </select>
+            </div>
+            <div class="modal-btns">
+                <button onclick="confirmTransfer()" class="btn-save">确认</button>
+                <button onclick="closeModal('modal-transfer')" class="btn-secondary">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="logic.js"></script>
+    <script>
+        const u = document.getElementById('login-username');
+        const p = document.getElementById('login-password');
+        const t = document.getElementById('toggle-pass');
+        const r = document.getElementById('remember-me');
+        const saved = localStorage.getItem('rememberPhone');
+        if (saved) { u.value = saved; r.checked = true; }
+        t.addEventListener('click', () => { if (p.type === 'password') { p.type = 'text'; t.textContent = '隐藏'; } else { p.type = 'password'; t.textContent = '显示'; } });
+        document.getElementById('btn-login').addEventListener('click', () => {
+            if (r.checked) localStorage.setItem('rememberPhone', u.value.trim());
+            else localStorage.removeItem('rememberPhone');
+        });
+    </script>
+</body>
+</html>

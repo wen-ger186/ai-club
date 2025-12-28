@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加入我们 - ai-club.fun</title>
+    <script src="//code.bdstatic.com/npm/leancloud-storage@4.12.0/dist/av-min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container" style="max-width: 720px; margin-top: 40px;">
+        <h2 class="main-title" style="text-align: center;">加入科创街超</h2>
+        <form onsubmit="handleJoin(event)">
+            <div class="form-group"><label>学员姓名 *</label><input type="text" id="j-name" required></div>
+            <div class="form-group"><label>性别 *</label>
+                <select id="j-gender" required>
+                    <option value="男">男</option>
+                    <option value="女">女</option>
+                </select>
+            </div>
+            <div class="form-group"><label>身份证号 *</label><input type="text" id="j-idcard" required></div>
+            <div class="form-group"><label>就读学校 *</label><input type="text" id="j-school" required></div>
+            <div class="form-group"><label>班级 *</label><input type="text" id="j-class" required></div>
+            <div class="form-group"><label>所属俱乐部 *</label>
+                <select id="j-club" required>
+                    <option value="莞-松湖俱乐部">莞-松湖俱乐部</option>
+                    <option value="莞-南城俱乐部">莞-南城俱乐部</option>
+                    <option value="莞-虎门俱乐部">莞-虎门俱乐部</option>
+                    <option value="待分配">待分配</option>
+                </select>
+            </div>
+            <div class="form-group"><label>家长手机号 *</label><input type="tel" id="j-phone" required></div>
+            <div class="form-group"><label>家长微信号 *</label><input type="text" id="j-wechat" required></div>
+            <div class="form-group"><label>会员照片</label><input type="file" id="j-photo" accept="image/*"></div>
+            <button type="submit" class="btn-submit">立即加入</button>
+            <p style="text-align: center; margin-top: 16px;"><a href="login.html">返回登录</a></p>
+        </form>
+    </div>
+    <script src="logic.js"></script>
+</body>
+</html>

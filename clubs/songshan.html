@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>莞-松湖俱乐部 - AI Club 分部</title>
+    <style>
+        /* --- 1. 全局基础样式 --- */
+        :root {
+            --primary-color: #2563EB; /* 科技蓝 */
+            --accent-color: #F59E0B;  /* 活力橙 */
+            --dark-bg: #1F2937;       /* 深色背景 */
+            --light-bg: #F3F4F6;      /* 浅色背景 */
+            --text-main: #111827;     /* 主要文字颜色 */
+            --text-sub: #6B7280;      /* 次要文字颜色 */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            line-height: 1.6;
+            color: var(--text-main);
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        /* --- 2. 导航栏 (Navbar) --- */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 5%;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            z-index: 1001; /* 确保Logo在移动端菜单之上 */
+        }
+
+        /* 注意：因为文件在 clubs 文件夹里，图片路径需要加 ../ 回到上一级 */
+        .logo-img {
+            height: 40px;
+            width: auto;
+            margin-right: 10px;
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        /* 桌面端菜单样式 */
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        /* 汉堡按钮 (默认隐藏，只有手机显示) */
+        .hamburger {
+            display: none;
+            cursor: pointer;
+            z-index: 1001;
+        }
+        
+        .bar {
+            display: block;
+            width: 25px;
+            height: 3px;
+            margin: 5px auto;
+            background-color: var(--text-main);
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* 按钮样式 */
+        .btn {
+            padding: 0.5rem 1.2rem;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .btn-login {
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            margin-right: 10px;
+        }
+
+        .btn-join {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        /* --- 3. Hero Section --- */
+        .hero {
+            height: 70vh; /* 分部页面高度稍微调低一点 */
+            /* 注意：图片路径也需要加 ../ */
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+            padding: 0 20px;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .hero p {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            max-width: 800px;
+            line-height: 1.8;
+        }
+
+        .hero-btn {
+            padding: 0.8rem 2rem;
+            font-size: 1.1rem;
+            background-color: var(--accent-color);
+            color: white;
+            border-radius: 50px;
+        }
+
+        /* --- 4. 核心项目 --- */
+        .features {
+            padding: 5rem 10%;
+            background-color: #fff;
+            text-align: center;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            margin-bottom: 3rem;
+            color: var(--dark-bg);
+        }
+
+        .cards-grid {
+            display: grid;
+            /* 关键代码：自动填充，最小宽度250px，不够就换行 */
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 1px solid #eee;
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .tag {
+            display: inline-block;
+            background-color: #e5e7eb;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: #4b5563;
+        }
+
+        /* --- 5. 信任背书 --- */
+        .why-us {
+            padding: 5rem 10%;
+            background-color: var(--light-bg);
+            text-align: center;
+        }
+
+        .benefits-grid {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+
+        .benefit-item {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        /* --- 6. 底部 --- */
+        footer {
+            background-color: var(--dark-bg);
+            color: white;
+            text-align: center;
+            padding: 4rem 20px;
+        }
+
+        .footer-btn {
+            padding: 1rem 3rem;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            display: inline-block;
+        }
+
+        /* =========================================
+           移动端适配 (Media Queries) - 关键部分
+           ========================================= */
+        @media (max-width: 768px) {
+            /* 1. 显示汉堡菜单按钮 */
+            .hamburger {
+                display: block;
+            }
+
+            /* 2. 隐藏并改造导航菜单 */
+            .nav-menu {
+                position: fixed;
+                left: -100%; /* 默认移出屏幕左侧 */
+                top: 70px; /* 导航栏高度之下 */
+                gap: 0;
+                flex-direction: column;
+                background-color: white;
+                width: 100%;
+                text-align: center;
+                transition: 0.3s;
+                box-shadow: 0 10px 10px rgba(0,0,0,0.1);
+                padding-bottom: 20px;
+            }
+
+            /* 激活状态：移回屏幕中间 */
+            .nav-menu.active {
+                left: 0;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                margin: 20px 0;
+                gap: 1.5rem;
+            }
+
+            .nav-actions {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                align-items: center;
+            }
+
+            /* 3. 字体和间距调整 */
+            .hero h1 { font-size: 1.8rem; } /* 手机上标题改小一点 */
+            .hero p { font-size: 1rem; }
+            .features, .why-us { padding: 3rem 5%; } /* 减小内边距 */
+            
+            /* 汉堡按钮变成 X 的动画效果 */
+            .hamburger.active .bar:nth-child(2) { opacity: 0; }
+            .hamburger.active .bar:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+            .hamburger.active .bar:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="logo-container">
+            <img src="../logo.png" alt="Logo" class="logo-img">
+            <span class="logo-text">AI Club | 莞-松湖俱乐部</span>
+        </div>
+
+        <div class="nav-menu">
+            <div class="nav-links">
+                <a href="../index.html#features" onclick="closeMenu()">核心课程</a>
+                <a href="../index.html#gallery" onclick="closeMenu()">风采展示</a>
+                <a href="../index.html" style="font-weight: bold;">← 返回总平台</a>
+            </div>
+            <div class="nav-actions">
+                <a href="../login.html" class="btn btn-login">会员登录</a>
+                <a href="../join.html" class="btn btn-join">加入俱乐部</a>
+            </div>
+        </div>
+
+        <div class="hamburger" onclick="toggleMenu()">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <h1>莞-松湖俱乐部</h1>
+        <p>
+            坐落于科技创新的前沿阵地——松山湖高新区。这里汇聚人工智能、机器人、编程教育等多元前沿课程。我们致力于让孩子们在真实场景中动手实践，感受未来科技力量。高水平教练团队+企业资源赋能+丰富项目活动，助力每一位孩子自信成长，打开AI世界的大门！
+        </p>
+        <a href="#features" class="hero-btn">探索我们的课程</a>
+    </section>
+
+    <section id="features" class="features">
+        <h2 class="section-title">核心课程体系</h2>
+        <div class="cards-grid">
+            <div class="card">
+                <span class="card-icon">💻</span>
+                <h3>编程闯关</h3>
+                <p>从图形化积木到 Python 代码，用闯关游戏的方式打开逻辑思维大门。</p>
+                <span class="tag">逻辑思维 | 算法启蒙</span>
+            </div>
+            <div class="card">
+                <span class="card-icon">⚔️</span>
+                <h3>格斗机器人</h3>
+                <p>亲手设计、组装、上阵！体验机械工程与竞技策略的终极碰撞。</p>
+                <span class="tag">工程结构 | 动手能力</span>
+            </div>
+            <div class="card">
+                <span class="card-icon">🚁</span>
+                <h3>无人机竞技</h3>
+                <p>冲上云霄的视角。学习空气动力学与飞行控制，挑战穿越障碍的极限速度。</p>
+                <span class="tag">空间感知 | 手眼协调</span>
+            </div>
+            <div class="card">
+                <span class="card-icon">🧱</span>
+                <h3>积木机器人</h3>
+                <p>万丈高楼平地起。适合低龄段的机械启蒙，让创意在积木中动起来。</p>
+                <span class="tag">创意构建 | 物理基础</span>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="why-us">
+        <h2 class="section-title">特色优势</h2>
+        <div class="benefits-grid">
+            <div class="benefit-item">
+                <h3>🏙️ 科技园区氛围</h3>
+                <p>身处松山湖高新区，近距离接触顶尖科技企业，拥有独特的研学资源。</p>
+            </div>
+            <div class="benefit-item">
+                <h3>👨‍🏫 专业教练团队</h3>
+                <p>拥有丰富竞赛指导经验的专职教练，提供更专业的个性化指导。</p>
+            </div>
+            <div class="benefit-item">
+                <h3>🏆 竞赛主要基地</h3>
+                <p>作为主要集训基地，提供更完善的备赛环境和硬件支持。</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <h2>来松山湖，点亮科技梦想！</h2>
+        <p style="margin-bottom: 2rem; color: #ccc;">预约免费体验课，开启孩子的 AI 之旅。</p>
+        <a href="../join.html" class="footer-btn">预约体验</a>
+        <p style="margin-top: 3rem; font-size: 0.8rem; color: #888;">&copy; 2025 AI Club 莞-松湖俱乐部. All rights reserved.</p>
+    </footer>
+
+    <script>
+        function toggleMenu() {
+            const hamburger = document.querySelector(".hamburger");
+            const navMenu = document.querySelector(".nav-menu");
+            
+            hamburger.classList.toggle("active");
+            navMenu.classList.toggle("active");
+        }
+
+        function closeMenu() {
+            const hamburger = document.querySelector(".hamburger");
+            const navMenu = document.querySelector(".nav-menu");
+            
+            hamburger.classList.remove("active");
+            navMenu.classList.remove("active");
+        }
+    </script>
+
+</body>
+</html>
