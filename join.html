@@ -3,39 +3,219 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>加入我们 - ai-club.fun</title>
+    <title>加入科创街超 - ai-club.fun</title>
     <script src="//code.bdstatic.com/npm/leancloud-storage@4.12.0/dist/av-min.js"></script>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* 会员注册页面专属样式 */
+        .join-container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            padding: 40px;
+        }
+        
+        .join-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #f0f5ff;
+        }
+        
+        .join-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: #2563EB;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #2563EB, #3B82F6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .join-subtitle {
+            font-size: 16px;
+            color: #6B7280;
+            font-weight: 500;
+        }
+        
+        .join-form {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+        }
+        
+        .form-group {
+            margin-bottom: 0;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+            font-size: 14px;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #E5E7EB;
+            border-radius: 12px;
+            font-size: 15px;
+            background: #FAFAFA;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #2563EB;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .form-group-full {
+            grid-column: 1 / -1;
+        }
+        
+        .btn-join-submit {
+            grid-column: 1 / -1;
+            padding: 18px;
+            background: linear-gradient(135deg, #2563EB, #3B82F6);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+        }
+        
+        .btn-join-submit:hover {
+            background: linear-gradient(135deg, #1E40AF, #2563EB);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(37, 99, 235, 0.4);
+        }
+        
+        .btn-join-submit:active {
+            transform: translateY(0);
+        }
+        
+        .back-link {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #F3F4F6;
+        }
+        
+        .back-link a {
+            color: #2563EB;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+        
+        .back-link a:hover {
+            color: #1E40AF;
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .join-form {
+                grid-template-columns: 1fr;
+            }
+            
+            .join-container {
+                margin: 20px;
+                padding: 25px;
+            }
+            
+            .join-title {
+                font-size: 28px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container" style="max-width: 720px; margin-top: 40px;">
-        <h2 class="main-title" style="text-align: center;">加入科创街超</h2>
-        <form onsubmit="handleJoin(event)">
-            <div class="form-group"><label>学员姓名 *</label><input type="text" id="j-name" required></div>
-            <div class="form-group"><label>性别 *</label>
+    <div class="join-container">
+        <div class="join-header">
+            <h1 class="join-title">加入科创街超</h1>
+            <p class="join-subtitle">填写信息，开启AI学习之旅</p>
+        </div>
+        
+        <form class="join-form" onsubmit="handleJoin(event)">
+            <div class="form-group">
+                <label>学员姓名 *</label>
+                <input type="text" id="j-name" required placeholder="请输入学员姓名">
+            </div>
+            
+            <div class="form-group">
+                <label>性别 *</label>
                 <select id="j-gender" required>
+                    <option value="">请选择性别</option>
                     <option value="男">男</option>
                     <option value="女">女</option>
                 </select>
             </div>
-            <div class="form-group"><label>身份证号 *</label><input type="text" id="j-idcard" required></div>
-            <div class="form-group"><label>就读学校 *</label><input type="text" id="j-school" required></div>
-            <div class="form-group"><label>班级 *</label><input type="text" id="j-class" required></div>
-            <div class="form-group"><label>所属俱乐部 *</label>
+            
+            <div class="form-group">
+                <label>身份证号 *</label>
+                <input type="text" id="j-idcard" required placeholder="请输入身份证号码">
+            </div>
+            
+            <div class="form-group">
+                <label>就读学校 *</label>
+                <input type="text" id="j-school" required placeholder="请输入学校名称">
+            </div>
+            
+            <div class="form-group">
+                <label>班级 *</label>
+                <input type="text" id="j-class" required placeholder="例如：三年级二班">
+            </div>
+            
+            <div class="form-group">
+                <label>所属俱乐部 *</label>
                 <select id="j-club" required>
+                    <option value="">请选择俱乐部</option>
                     <option value="莞-松湖俱乐部">莞-松湖俱乐部</option>
                     <option value="莞-南城俱乐部">莞-南城俱乐部</option>
                     <option value="莞-虎门俱乐部">莞-虎门俱乐部</option>
                     <option value="待分配">待分配</option>
                 </select>
             </div>
-            <div class="form-group"><label>家长手机号 *</label><input type="tel" id="j-phone" required></div>
-            <div class="form-group"><label>家长微信号 *</label><input type="text" id="j-wechat" required></div>
-            <div class="form-group"><label>会员照片</label><input type="file" id="j-photo" accept="image/*"></div>
-            <button type="submit" class="btn-submit">立即加入</button>
-            <p style="text-align: center; margin-top: 16px;"><a href="login.html">返回登录</a></p>
+            
+            <div class="form-group">
+                <label>家长手机号 *</label>
+                <input type="tel" id="j-phone" required placeholder="请输入家长手机号码">
+            </div>
+            
+            <div class="form-group">
+                <label>家长微信号 *</label>
+                <input type="text" id="j-wechat" required placeholder="请输入家长微信号">
+            </div>
+            
+            <div class="form-group form-group-full">
+                <label>会员照片</label>
+                <input type="file" id="j-photo" accept="image/*">
+            </div>
+            
+            <button type="submit" class="btn-join-submit">立即加入科创街超</button>
+            
+            <div class="back-link">
+                <p><a href="login.html">已有账号？返回登录</a></p>
+            </div>
         </form>
     </div>
+    
     <script src="logic.js"></script>
 </body>
 </html>
