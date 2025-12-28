@@ -4,6 +4,72 @@ var SERVER_URL=(window.LC_CONFIG&&window.LC_CONFIG.SERVER_URL)||"https://h5n4qms
 AV.init({appId:APP_ID,appKey:APP_KEY,serverURL:SERVER_URL});
 
 var currentUser=null;
+
+// 登录函数
+function doLogin() {
+  var username = document.getElementById('login-username').value.trim();
+  var password = document.getElementById('login-password').value.trim();
+  var errorElement = document.getElementById('login-error');
+  
+  // 隐藏错误信息
+  if (errorElement) errorElement.style.display = 'none';
+  
+  // 验证输入
+  if (!username || !password) {
+    showLoginError('请输入账号和密码');
+    return;
+  }
+  
+  // 显示加载状态
+  var loginBtn = document.getElementById('btn-login');
+  if (loginBtn) {
+    loginBtn.disabled = true;
+    loginBtn.textContent = '登录中...';
+  }
+  
+  // 调用 LeanCloud 登录
+  AV.User.logIn(username, password).then(function(user) {
+    // 登录成功
+    var userData = {
+      id: user.id,
+      username: user.getUsername(),
+      name: user.get('displayName') || user.getUsername(),
+      role: user.get('roleLevel') >= 2 ? 'platform_admin' : (user.get('roleLevel') === 1 ? 'club_admin' : 'member'),
+      roleLevel: user.get('roleLevel') || 0,
+      clubName: user.get('club') || ''
+    };
+    
+    // 保存用户信息到本地存储
+    localStorage.setItem('currentUser', JSON.stringify(userData));
+    currentUser = userData;
+    
+    // 跳转到管理后台
+    window.location.href = 'dashboard.html';
+    
+  }).catch(function(error) {
+    // 登录失败
+    if (loginBtn) {
+      loginBtn.disabled = false;
+      loginBtn.textContent = '登录';
+    }
+    
+    if (error.code === 211) {
+      showLoginError('用户不存在');
+    } else if (error.code === 210) {
+      showLoginError('密码错误');
+    } else {
+      showLoginError('登录失败: ' + error.message);
+    }
+  });
+}
+
+function showLoginError(message) {
+  var errorElement = document.getElementById('login-error');
+  if (errorElement) {
+    errorElement.textContent = message;
+    errorElement.style.display = 'block';
+  }
+}
 var membersCache=[];
 var selectedIds=new Set();
 var editingMemberId=null;
