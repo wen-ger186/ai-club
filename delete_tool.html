@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最高权限清理工具 - ai-club.fun</title>
+    <script src="//code.bdstatic.com/npm/leancloud-storage@4.12.0/dist/av-min.js"></script>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            color: #dc2626;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .warning {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #374151;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #b91c1c;
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+        .success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+        .error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ 最高权限清理工具</h1>
+        
+        <div class="warning">
+            <strong>⚠️ 危险操作警告：</strong><br>
+            • 此工具使用 Master Key 权限，可强制删除任何用户数据<br>
+            • 删除操作不可逆，请谨慎使用<br>
+            • 仅限超级管理员在紧急情况下使用
+        </div>
+
+        <div class="form-group">
+            <label for="masterKey">Master Key：</label>
+            <input type="password" id="masterKey" placeholder="请输入 LeanCloud Master Key">
+        </div>
+
+        <div class="form-group">
+            <label for="objectId">用户 ObjectId：</label>
+            <input type="text" id="objectId" placeholder="请输入要删除的用户 ObjectId">
+        </div>
+
+        <button onclick="deleteUser()" id="deleteBtn">确认删除</button>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        function deleteUser() {
+            const masterKey = document.getElementById('masterKey').value.trim();
+            const objectId = document.getElementById('objectId').value.trim();
+            const resultDiv = document.getElementById('result');
+            const deleteBtn = document.getElementById('deleteBtn');
+
+            if (!masterKey) {
+                showResult('请输入 Master Key', 'error');
+                return;
+            }
+            if (!objectId) {
+                showResult('请输入用户 ObjectId', 'error');
+                return;
+            }
+
+            deleteBtn.disabled = true;
+            deleteBtn.textContent = '删除中...';
+
+            // 使用 Master Key 权限
+            AV.Cloud.useMasterKey(true);
+            
+            // 设置 Master Key 到请求头（LeanCloud JS SDK 的特殊处理）
+            AV._config.masterKey = masterKey;
+
+            const query = new AV.Query('_User');
+            query.get(objectId).then(function(user) {
+                return user.destroy();
+            }).then(function() {
+                showResult('✅ 用户删除成功！', 'success');
+                document.getElementById('masterKey').value = '';
+                document.getElementById('objectId').value = '';
+            }).catch(function(error) {
+                showResult('❌ 删除失败：' + error.message, 'error');
+            }).finally(function() {
+                deleteBtn.disabled = false;
+                deleteBtn.textContent = '确认删除';
+                // 清理 Master Key
+                AV._config.masterKey = null;
+                AV.Cloud.useMasterKey(false);
+            });
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = 'result ' + type;
+            resultDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

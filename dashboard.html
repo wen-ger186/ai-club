@@ -81,13 +81,14 @@
 
       <h3 style="margin:20px 0 10px;">管理员管理</h3>
       <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+        <select id="admin-role-type" style="padding:6px 8px; border:2px solid #2563eb; border-radius:4px; background:#f0f5ff; font-weight:bold;">
+          <option value="">-- 请选择管理员类型 --</option>
+          <option value="2">平台管理员 (负责多店)</option>
+          <option value="1">俱乐部管理员 (单店店长)</option>
+        </select>
         <input id="admin-username" placeholder="账号(手机号)" style="padding:6px 8px; border:1px solid #ddd; border-radius:4px;">
         <input id="admin-password" placeholder="密码" style="padding:6px 8px; border:1px solid #ddd; border-radius:4px;">
         <input id="admin-name" placeholder="姓名" style="padding:6px 8px; border:1px solid #ddd; border-radius:4px;">
-        <select id="admin-role" style="padding:6px 8px; border:1px solid #ddd; border-radius:4px;">
-          <option value="1">俱乐部管理员</option>
-          <option value="2">平台管理员</option>
-        </select>
         <select id="admin-club" style="padding:6px 8px; border:1px solid #ddd; border-radius:4px;"></select>
         <button class="btn-xs" onclick="createAdmin()">新增管理员</button>
       </div>

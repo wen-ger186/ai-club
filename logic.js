@@ -149,16 +149,24 @@ function applyRoleUI(){
   var btnExport=document.getElementById('btn-export');
   if(clubSel){clubSel.disabled=lv===1}
   if(btnAdd){btnAdd.style.display=lv>=1?'inline-block':'none'}
-  if(btnDel){btnDel.style.display=lv>=1?'inline-block':'none'}
+  if(btnDel){btnDel.style.display=lv===3?'inline-block':'none'}
   if(btnTrans){btnTrans.style.display=lv>=2?'inline-block':'none'}
   if(btnExport){btnExport.style.display=lv>=1?'inline-block':'none'}
   var tabOrg=document.querySelector('[data-tab="tab-org"]');if(tabOrg)tabOrg.style.display=lv>=2?'inline-block':'none';
   var tabCms=document.querySelector('[data-tab="tab-cms"]');if(tabCms)tabCms.style.display=lv>=2?'inline-block':'none';
-  var roleSelect=document.getElementById('admin-role');
-  if(roleSelect){
-    roleSelect.innerHTML='';
-    var op1=document.createElement('option');op1.value='1';op1.innerText='俱乐部管理员';roleSelect.appendChild(op1);
-    if(lv===3){var op2=document.createElement('option');op2.value='2';op2.innerText='平台管理员';roleSelect.appendChild(op2)}
+  var roleTypeSelect=document.getElementById('admin-role-type');
+  if(roleTypeSelect){
+    if(lv===3){
+      roleTypeSelect.innerHTML='<option value="">-- 请选择管理员类型 --</option><option value="2">平台管理员 (负责多店)</option><option value="1">俱乐部管理员 (单店店长)</option>';
+      roleTypeSelect.disabled=false;
+      roleTypeSelect.style.border='2px solid #2563eb';
+      roleTypeSelect.style.background='#f0f5ff';
+    }else{
+      roleTypeSelect.innerHTML='<option value="1">俱乐部管理员 (单店店长)</option>';
+      roleTypeSelect.disabled=true;
+      roleTypeSelect.style.border='1px solid #ccc';
+      roleTypeSelect.style.background='#f9f9f9';
+    }
   }
 }
 
@@ -166,7 +174,7 @@ function loadClubs(){
   var Club=AV.Object.extend('Club');var q=new AV.Query('Club');q.ascending('name');
   q.find().then(function(list){
     var body=document.getElementById('club-list-body');
-    if(body){body.innerHTML='';list.forEach(function(o){var tr=document.createElement('tr');tr.innerHTML='<td>'+((o.get('name'))||'')+'</td><td><button class="btn-xs" data-id="'+o.id+'" onclick="editClub(\''+o.id+'\')">修改</button> <button class="btn-xs" onclick="deleteClub(\''+o.id+'\')">删除</button></td>';body.appendChild(tr);});}
+    if(body){body.innerHTML='';list.forEach(function(o){var tr=document.createElement('tr');tr.innerHTML='<td>'+((o.get('name'))||'')+'</td><td><button class="btn-xs" data-id="'+o.id+'" onclick="editClub(\''+o.id+'\')">修改</button> '+(getRoleLevel(getCurrentRole())===3?'<button class="btn-xs" onclick="deleteClub(\''+o.id+'\')">删除</button>':'')+'</td>';body.appendChild(tr);});}
     var sel=document.getElementById('filter-club');
     if(sel){sel.innerHTML='';if(getRoleLevel(getCurrentRole())>=2){var op=document.createElement('option');op.value='ALL';op.innerText='全部俱乐部';sel.appendChild(op);}list.forEach(function(o){var op=document.createElement('option');op.value=o.get('name');op.innerText=o.get('name');sel.appendChild(op);});}
     var adminClub=document.getElementById('admin-club');
@@ -348,9 +356,13 @@ function createAdmin(){
   var username=document.getElementById('admin-username').value.trim();
   var password=document.getElementById('admin-password').value.trim();
   var name=document.getElementById('admin-name').value.trim();
-  var roleLevel=parseInt(document.getElementById('admin-role').value,10);
+  var roleLevel=parseInt(document.getElementById('admin-role-type').value,10);
   var club=document.getElementById('admin-club').value;
-  if(!username||!password||!name){alert('请填写完整信息');return}
+  
+  // 权限验证：Level 2 只能创建 Level 1
+  if(lv===2&&roleLevel!==1){alert('权限不足：只能创建俱乐部管理员');return}
+  if(!username||!password||!name||!roleLevel){alert('请填写完整信息');return}
+  
   var user=new AV.User();user.setUsername(username);user.setPassword(password);user.set('displayName',name);user.set('roleLevel',roleLevel);user.set('club',club||'');
   user.signUp().then(function(){
     document.getElementById('admin-username').value='';
@@ -369,7 +381,7 @@ function loadAdmins(){
     list.forEach(function(u){
       var tr=document.createElement('tr');
       var rl=u.get('roleLevel');var rlText=rl===3?'超级管理员':(rl===2?'平台管理员':'俱乐部管理员');
-      var ops='<button class="btn-xs" onclick="editAdmin(\''+u.id+'\')">修改</button> <button class="btn-xs" onclick="deleteAdmin(\''+u.id+'\')">删除</button>';
+      var ops='<button class="btn-xs" onclick="editAdmin(\''+u.id+'\')">修改</button> '+(getRoleLevel(getCurrentRole())===3?'<button class="btn-xs" onclick="deleteAdmin(\''+u.id+'\')">删除</button>':'')+'';
       tr.innerHTML='<td>'+((u.get('displayName'))||'')+'</td><td>'+((u.get('username'))||'')+'</td><td>'+rlText+'</td><td>'+((u.get('club'))||'')+'</td><td>'+ops+'</td>';
       body.appendChild(tr);
     })
