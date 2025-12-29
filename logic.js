@@ -167,7 +167,13 @@ function getCurrentRole(){return currentUser&&currentUser.role?currentUser.role:
 function getCurrentClub(){return currentUser&&currentUser.clubName?currentUser.clubName:(currentUser&&currentUser.club?currentUser.club:'')}
 
 function switchTab(a){
-  ['tab-members','tab-org','tab-cms'].forEach(function(b){var c=document.getElementById(b);if(c)c.style.display=b===a?'block':'none'});
+  ['tab-members','tab-org','tab-club-cms','tab-cms'].forEach(function(b){var c=document.getElementById(b);if(c)c.style.display=b===a?'block':'none'});
+  
+  // 切换到俱乐部内容管理标签时加载俱乐部列表
+  if (a === 'tab-club-cms') {
+    loadClubCMSList();
+  }
+  
   applyRoleUI();
 }
 
@@ -642,3 +648,136 @@ function logoutAction(){localStorage.removeItem('currentUser');window.location.h
 function toggleSelectAll(){var a=document.getElementById('select-all');var items=Array.from(document.querySelectorAll('.member-check'));selectedIds.clear();items.forEach(function(cb){cb.checked=a.checked;if(a.checked)selectedIds.add(cb.value)})}
 function openTransferModal(){document.getElementById('modal-transfer').classList.remove('hidden')}
 function closeModal(id){document.getElementById(id).classList.add('hidden')}
+
+// 俱乐部内容管理功能
+function openClubModal(id) {
+  document.getElementById('modal-club-cms').classList.remove('hidden');
+  document.getElementById('club-cms-id').value = id || '';
+  
+  if (id) {
+    // 编辑模式：加载现有数据
+    var q = new AV.Query('Club');
+    q.get(id).then(function(club) {
+      document.getElementById('club-cms-name').value = club.get('name') || '';
+      document.getElementById('club-cms-short').value = club.get('shortDescription') || '';
+      document.getElementById('club-cms-detail').value = club.get('detailContent') || '';
+      document.getElementById('club-cms-address').value = club.get('address') || '';
+      document.getElementById('club-cms-phone').value = club.get('contactPhone') || '';
+    }).catch(function(error) {
+      alert('加载失败: ' + error.message);
+    });
+  } else {
+    // 新增模式：清空表单
+    document.getElementById('club-cms-name').value = '';
+    document.getElementById('club-cms-short').value = '';
+    document.getElementById('club-cms-detail').value = '';
+    document.getElementById('club-cms-address').value = '';
+    document.getElementById('club-cms-phone').value = '';
+    document.getElementById('club-cms-cover').value = '';
+  }
+}
+
+function submitClubCMS() {
+  var id = document.getElementById('club-cms-id').value;
+  var name = document.getElementById('club-cms-name').value.trim();
+  var shortDesc = document.getElementById('club-cms-short').value.trim();
+  var fileInput = document.getElementById('club-cms-cover');
+  
+  if (!name) { alert('请输入俱乐部名称'); return; }
+  if (!shortDesc) { alert('请输入简短介绍'); return; }
+  
+  var Club = AV.Object.extend('Club');
+  var club;
+  
+  if (id) {
+    // 编辑现有俱乐部
+    club = Club.createWithoutData(id);
+  } else {
+    // 创建新俱乐部
+    club = new Club();
+  }
+  
+  club.set('name', name);
+  club.set('shortDescription', shortDesc);
+  club.set('detailContent', document.getElementById('club-cms-detail').value.trim());
+  club.set('address', document.getElementById('club-cms-address').value.trim());
+  club.set('contactPhone', document.getElementById('club-cms-phone').value.trim());
+  
+  // 处理图片上传
+  if (fileInput.files.length > 0) {
+    var file = fileInput.files[0];
+    var avFile = new AV.File(file.name, file);
+    
+    avFile.save().then(function(savedFile) {
+      club.set('coverImage', savedFile);
+      return club.save();
+    }).then(function() {
+      alert('保存成功！');
+      closeModal('modal-club-cms');
+      loadClubCMSList();
+    }).catch(function(error) {
+      alert('保存失败: ' + error.message);
+    });
+  } else {
+    // 没有上传新图片，直接保存
+    club.save().then(function() {
+      alert('保存成功！');
+      closeModal('modal-club-cms');
+      loadClubCMSList();
+    }).catch(function(error) {
+      alert('保存失败: ' + error.message);
+    });
+  }
+}
+
+function loadClubCMSList() {
+  var q = new AV.Query('Club');
+  q.ascending('name');
+  q.include('coverImage');
+  
+  q.find().then(function(clubs) {
+    var tbody = document.getElementById('club-cms-list-body');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    if (clubs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#999;">暂无俱乐部数据</td></tr>';
+      return;
+    }
+    
+    clubs.forEach(function(club) {
+      var tr = document.createElement('tr');
+      var coverImage = club.get('coverImage');
+      var coverHtml = coverImage ? 
+        '<img src="' + coverImage.url() + '" style="width:60px; height:40px; object-fit:cover; border-radius:4px;">' : 
+        '<div style="width:60px; height:40px; background:#eee; border-radius:4px; display:flex; align-items:center; justify-content:center; color:#999; font-size:12px;">无图</div>';
+      
+      tr.innerHTML = '<td>' + coverHtml + '</td>' +
+        '<td><strong>' + (club.get('name') || '') + '</strong></td>' +
+        '<td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + (club.get('shortDescription') || '') + '</td>' +
+        '<td style="max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + (club.get('address') || '') + '</td>' +
+        '<td>' + (club.get('contactPhone') || '') + '</td>' +
+        '<td><button class="btn-xs" onclick="openClubModal(\'' + club.id + '\')">编辑</button> ' +
+        (getRoleLevel(getCurrentRole()) === 3 ? '<button class="btn-xs btn-danger" onclick="deleteClubCMS(\'' + club.id + '\')">删除</button>' : '') + '</td>';
+      
+      tbody.appendChild(tr);
+    });
+  }).catch(function(error) {
+    console.error('加载俱乐部列表失败:', error);
+  });
+}
+
+function deleteClubCMS(id) {
+  if (!confirm('确定要删除这个俱乐部的内容吗？此操作不可恢复！')) return;
+  
+  var q = new AV.Query('Club');
+  q.get(id).then(function(club) {
+    return club.destroy();
+  }).then(function() {
+    alert('删除成功');
+    loadClubCMSList();
+  }).catch(function(error) {
+    alert('删除失败: ' + error.message);
+  });
+}
