@@ -250,6 +250,21 @@ function deleteClub(id){
     .catch(function(e){alert('失败：'+e.message)})
 }
 
+// 删除会员函数
+function deleteMember(id) {
+  if (!confirm('确定要删除这个会员吗？此操作不可恢复！')) return;
+  
+  var q = new AV.Query('Member');
+  q.get(id).then(function(member) {
+    return member.destroy();
+  }).then(function() {
+    alert('删除成功');
+    loadMembers(); // 刷新表格
+  }).catch(function(error) {
+    alert('删除失败: ' + error.message);
+  });
+}
+
 function loadMembers(){
   var lv=getRoleLevel(getCurrentRole());
   var myClub=getCurrentClub();
@@ -268,19 +283,60 @@ function loadMembers(){
     .catch(function(){var tbody=document.getElementById('member-list-body');if(tbody){tbody.innerHTML='<tr><td colspan="11" style="text-align:center; padding: 20px; color:#999;">加载失败</td></tr>'}})
 }
 
+// 加载俱乐部列表
+var clubsCache = [];
+function loadClubsList() {
+  var q = new AV.Query('Club');
+  q.limit(100);
+  return q.find().then(function(clubs) {
+    clubsCache = clubs;
+    return clubs;
+  });
+}
+
+// 更新会员俱乐部
+function updateMemberClub(memberId, clubName) {
+  var q = new AV.Query('Member');
+  q.get(memberId).then(function(member) {
+    member.set('club', clubName);
+    return member.save();
+  }).then(function() {
+    alert('更新成功');
+    loadMembers(); // 刷新表格
+  }).catch(function(error) {
+    alert('更新失败: ' + error.message);
+  });
+}
+
 function renderMembersTable(){
   var tbody=document.getElementById('member-list-body');if(!tbody)return;
   tbody.innerHTML='';
   if(membersCache.length===0){tbody.innerHTML='<tr><td colspan="11" style="text-align:center; padding: 20px; color:#999;">暂无数据</td></tr>';return}
-  membersCache.forEach(function(o){
-    var tr=document.createElement('tr');
-    var img=o.get('photoUrl')||'';var id=o.id;
-    var btns='<button class="btn-xs" onclick="openMemberModal(\''+id+'\')">编辑</button>';
-    tr.innerHTML='<td><input type="checkbox" class="member-check" value="'+id+'"></td><td><img src="'+img+'" style="width:36px;height:36px;border-radius:50%;background:#eee;"></td><td>'+btns+'</td><td><strong>'+(o.get('name')||'')+'</strong></td><td>'+(o.get('gender')||'')+'</td><td>'+(o.get('idNumber')||'')+'</td><td>'+(o.get('parentPhone')||'')+'</td><td>'+(o.get('school')||'')+'</td><td>'+(o.get('className')||'')+'</td><td>'+(o.get('club')||'')+'</td><td>'+(o.get('parentWeChat')||'')+'</td>';
-    tbody.appendChild(tr);
-  });
-  Array.from(document.querySelectorAll('.member-check')).forEach(function(cb){
-    cb.addEventListener('change',function(){var id=cb.value;if(cb.checked)selectedIds.add(id);else selectedIds.delete(id);});
+  
+  // 确保俱乐部列表已加载
+  loadClubsList().then(function() {
+    membersCache.forEach(function(o){
+      var tr=document.createElement('tr');
+      var img=o.get('photoUrl')||'';var id=o.id;
+      var btns='<button class="btn-xs" onclick="openMemberModal(\''+id+'\')">编辑</button> <button class="btn-xs btn-danger" onclick="deleteMember(\''+id+'\')">删除</button>';
+      
+      // 创建俱乐部下拉选择框
+      var clubSelect = '<select class="club-select" onchange="updateMemberClub(\''+id+'\', this.value)" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ddd;">';
+      clubSelect += '<option value="">待分配</option>';
+      clubsCache.forEach(function(club) {
+        var clubName = club.get('name') || '';
+        var selected = clubName === o.get('club') ? 'selected' : '';
+        clubSelect += '<option value="' + clubName + '" ' + selected + '>' + clubName + '</option>';
+      });
+      clubSelect += '</select>';
+      
+      tr.innerHTML='<td><input type="checkbox" class="member-check" value="'+id+'"></td><td><img src="'+img+'" style="width:36px;height:36px;border-radius:50%;background:#eee;"></td><td>'+btns+'</td><td><strong>'+(o.get('name')||'')+'</strong></td><td>'+(o.get('gender')||'')+'</td><td>'+(o.get('idNumber')||'')+'</td><td>'+(o.get('parentPhone')||'')+'</td><td>'+(o.get('school')||'')+'</td><td>'+(o.get('className')||'')+'</td><td>'+clubSelect+'</td><td>'+(o.get('parentWeChat')||'')+'</td>';
+      tbody.appendChild(tr);
+    });
+    
+    Array.from(document.querySelectorAll('.member-check')).forEach(function(cb){
+      cb.addEventListener('change',function(){var id=cb.value;if(cb.checked)selectedIds.add(id);else selectedIds.delete(id);});
+    });
   });
 }
 
@@ -386,9 +442,68 @@ function exportSelected(){
   var toRow=function(u){return [u.get('name')||'',u.get('gender')||'',u.get('idNumber')||'',u.get('parentPhone')||'',u.get('school')||'',u.get('className')||'',u.get('club')||'',u.get('parentWeChat')||''].map(function(v){return "\""+String(v).replace(/"/g,'""')+"\""}).join(',')};
   var csv=[headers.join(','),...base.map(toRow)].join('\n');
   var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');a.href=url;a.download='ai-club-members.csv';document.body.appendChild(a);a.click();URL.revokeObjectURL(url);
+  var link=document.createElement('a');
+  link.href=URL.createObjectURL(blob);
+  link.download='会员数据.csv';
+  link.click();
 }
+
+// CSV导入功能
+window.saveMemberFromCSV = function(row) {
+  return new Promise((resolve, reject) => {
+    const lv = getRoleLevel(getCurrentRole());
+    const myClub = getCurrentClub();
+    
+    // 映射CSV字段到数据库字段
+    const memberData = {
+      name: row.姓名 || '',
+      gender: row.性别 || '男',
+      idNumber: row.身份证号 || '',
+      parentPhone: row.手机号 || '',
+      school: row.学校 || '',
+      className: row.班级 || '',
+      club: row.俱乐部 || (lv === 1 ? myClub : ''),
+      parentWeChat: '',
+      photoUrl: ''
+    };
+
+    // 验证必填字段
+    if (!memberData.name || !memberData.idNumber) {
+      reject(new Error('姓名或身份证号为空'));
+      return;
+    }
+
+    // 检查身份证号是否已存在
+    const query = new AV.Query('Member');
+    query.equalTo('idNumber', memberData.idNumber);
+    query.first().then(function(existingMember) {
+      if (existingMember) {
+        reject(new Error('身份证号已存在'));
+        return;
+      }
+
+      // 权限检查
+      if (lv === 1 && memberData.club !== myClub) {
+        reject(new Error('无权跨俱乐部操作'));
+        return;
+      }
+
+      // 创建新会员
+      const Member = AV.Object.extend('Member');
+      const newMember = new Member();
+      
+      Object.keys(memberData).forEach(key => {
+        newMember.set(key, memberData[key]);
+      });
+
+      return newMember.save();
+    }).then(function() {
+      resolve();
+    }).catch(function(error) {
+      reject(error);
+    });
+  });
+};
 
 function createAdmin(){
   var lv=getRoleLevel(getCurrentRole());if(lv<2){alert('无权限');return}
