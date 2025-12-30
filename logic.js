@@ -645,25 +645,17 @@ function saveSiteSettings(){
 }
 
 function logoutAction(){
-  console.log('退出系统按钮被点击 - 开始执行退出逻辑');
-  
-  // 先立即清除本地存储并跳转，确保基本功能可用
+  // 清除本地存储
   localStorage.removeItem('currentUser');
   
-  // 尝试清除LeanCloud会话（如果SDK可用）
-  try {
-    if (typeof AV !== 'undefined' && typeof AV.User !== 'undefined') {
-      AV.User.logOut().then(function() {
-        console.log('LeanCloud会话已清除');
-      }).catch(function(error) {
-        console.warn('LeanCloud退出失败，但本地数据已清除:', error);
-      });
-    }
-  } catch (e) {
-    console.warn('LeanCloud退出异常:', e);
+  // 清除LeanCloud用户会话（如果SDK可用）
+  if (typeof AV !== 'undefined' && typeof AV.User !== 'undefined') {
+    AV.User.logOut().catch(function(error) {
+      console.warn('LeanCloud退出失败:', error);
+    });
   }
   
-  // 立即跳转到登录页
+  // 跳转到登录页
   window.location.href = "login.html";
 }
 function toggleSelectAll(){var a=document.getElementById('select-all');var items=Array.from(document.querySelectorAll('.member-check'));selectedIds.clear();items.forEach(function(cb){cb.checked=a.checked;if(a.checked)selectedIds.add(cb.value)})}
