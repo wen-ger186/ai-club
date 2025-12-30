@@ -644,7 +644,20 @@ function saveSiteSettings(){
   }).then(function(){alert('已保存')}).catch(function(e){alert('失败：'+e.message)})
 }
 
-function logoutAction(){localStorage.removeItem('currentUser');window.location.href="index.html"}
+function logoutAction(){
+  // 清除LeanCloud用户会话
+  AV.User.logOut().then(function() {
+    // 清除本地存储
+    localStorage.removeItem('currentUser');
+    // 跳转到登录页
+    window.location.href = "login.html";
+  }).catch(function(error) {
+    console.error('退出失败:', error);
+    // 即使退出失败也清除本地数据并跳转
+    localStorage.removeItem('currentUser');
+    window.location.href = "login.html";
+  });
+}
 function toggleSelectAll(){var a=document.getElementById('select-all');var items=Array.from(document.querySelectorAll('.member-check'));selectedIds.clear();items.forEach(function(cb){cb.checked=a.checked;if(a.checked)selectedIds.add(cb.value)})}
 function openTransferModal(){document.getElementById('modal-transfer').classList.remove('hidden')}
 function closeModal(id){document.getElementById(id).classList.add('hidden')}
