@@ -645,18 +645,26 @@ function saveSiteSettings(){
 }
 
 function logoutAction(){
-  // 清除LeanCloud用户会话
-  AV.User.logOut().then(function() {
-    // 清除本地存储
-    localStorage.removeItem('currentUser');
-    // 跳转到登录页
-    window.location.href = "login.html";
-  }).catch(function(error) {
-    console.error('退出失败:', error);
-    // 即使退出失败也清除本地数据并跳转
-    localStorage.removeItem('currentUser');
-    window.location.href = "login.html";
-  });
+  console.log('退出系统按钮被点击 - 开始执行退出逻辑');
+  
+  // 先立即清除本地存储并跳转，确保基本功能可用
+  localStorage.removeItem('currentUser');
+  
+  // 尝试清除LeanCloud会话（如果SDK可用）
+  try {
+    if (typeof AV !== 'undefined' && typeof AV.User !== 'undefined') {
+      AV.User.logOut().then(function() {
+        console.log('LeanCloud会话已清除');
+      }).catch(function(error) {
+        console.warn('LeanCloud退出失败，但本地数据已清除:', error);
+      });
+    }
+  } catch (e) {
+    console.warn('LeanCloud退出异常:', e);
+  }
+  
+  // 立即跳转到登录页
+  window.location.href = "login.html";
 }
 function toggleSelectAll(){var a=document.getElementById('select-all');var items=Array.from(document.querySelectorAll('.member-check'));selectedIds.clear();items.forEach(function(cb){cb.checked=a.checked;if(a.checked)selectedIds.add(cb.value)})}
 function openTransferModal(){document.getElementById('modal-transfer').classList.remove('hidden')}
